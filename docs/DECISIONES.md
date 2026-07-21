@@ -84,6 +84,18 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
   S3+CloudFront (el pedido era Amplify).
 - **Impacto:** `web/`, `infra/stacks/web_stack.py`, `deploy.yml`, role OIDC.
 
+## 2026-07-21 · Mapa sobre Google Maps (con fallback MapLibre)
+- **Contexto:** el mockup usa Google Maps; con MapLibre el basemap raster tenía render
+  inestable (quedaba negro hasta interactuar) tras muchos intentos de fix.
+- **Decisión:** el mapa del módulo Inteligencia usa **Google Maps JS** (estilo oscuro,
+  Data layer con los polígonos de circuito coloreados por fuerza + labels + selección)
+  cuando existe `VITE_GOOGLE_MAPS_KEY`; si no, cae a **MapLibre** (fallback sin key).
+  La key va en `web/.env` (gitignoreado) local y como **secret de GitHub** en el CI —
+  nunca en el repo.
+- **Impacto:** `web/src/MapGoogle.jsx`, `web/src/MapView.jsx` (fallback), `deploy.yml`
+  (inyecta el secret), `web/.env.example`.
+- **Ojo:** la key debe permitir el referer del dominio de producción (Amplify) + localhost.
+
 ## 2026-07-21 · Fixes de correctitud del API del mapa
 - **CORS duplicado:** la Function URL **y** el handler seteaban ambos
   `Access-Control-Allow-Origin` → con `Origin` del browser se duplicaba y el fetch se

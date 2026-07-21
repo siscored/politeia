@@ -7,9 +7,12 @@ circuitos (bundleado).
 ## Correr local
 ```bash
 npm install
-npm run dev          # http://localhost:5173
+cp .env.example .env   # completá VITE_GOOGLE_MAPS_KEY (opcional; sin key → MapLibre)
+npm run dev            # http://localhost:5173
 ```
-El API se toma de `VITE_API_URL` (si no, usa el default de `src/api.js`).
+El API se toma de `VITE_API_URL` (si no, usa el default de `src/api.js`). El mapa usa
+**Google Maps** si hay `VITE_GOOGLE_MAPS_KEY` (en `.env` local / secret de GitHub en CI),
+y cae a **MapLibre** si no la hay.
 
 ## Estructura
 | Archivo | Qué es |

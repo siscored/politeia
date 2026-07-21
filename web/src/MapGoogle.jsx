@@ -77,6 +77,9 @@ export default function MapGoogle({ coloredGeo, distrito, selected, onSelect }) 
       });
       map.data.addListener("mouseover", () => { map.setOptions({ draggableCursor: "pointer" }); });
       render();
+      // Google Maps a veces tarda en pintar los tiles si el contenedor no tenía
+      // tamaño estable al crear; un resize trigger escalonado lo destraba.
+      [200, 700, 1600].forEach((t) => setTimeout(() => { try { g.event.trigger(map, "resize"); } catch (_) {} }, t));
     }).catch((err) => console.error("Google Maps no cargó (¿referer/API key?):", err));
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
