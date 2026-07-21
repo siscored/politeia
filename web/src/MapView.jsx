@@ -18,7 +18,9 @@ const STYLE = {
       attribution: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     },
   },
-  layers: [{ id: "carto-base", type: "raster", source: "carto" }],
+  // raster-fade-duration 0: los tiles aparecen al instante al cargar, sin el
+  // fade-in que requiere frames continuos (que no ocurren si el mapa está idle).
+  layers: [{ id: "carto-base", type: "raster", source: "carto", paint: { "raster-fade-duration": 0 } }],
 };
 
 function eachCoord(geom, fn) {
@@ -52,11 +54,11 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
     map.on("error", (e) => console.error("MAPLIBRE", e && e.error && e.error.message));
 
-    // El 'load' de MapLibre queda trabado (mapa negro) hasta un resize si el
-    // contenedor no tenía tamaño estable al crear. Forzamos resizes escalonados.
-    const resizeTimers = [0, 250, 700, 1500].map((t) => setTimeout(() => { try { map.resize(); } catch (_) {} }, t));
+    // Resize+repaint escalonados: el mapa a veces no tiene tamaño estable al
+    // crear (queda negro) y hay que patear el render tras cargar los tiles.
+    const resizeTimers = [0, 250, 700, 1500, 2600].map((t) => setTimeout(() => { try { map.resize(); map.triggerRepaint(); } catch (_) {} }, t));
 
-    map.on("load", () => {
+    map.on("style.load", () => {
       map.addSource("circuitos", { type: "geojson", data: dataRef.current, promoteId: "circuito_id" });
       map.addLayer({
         id: "fill", type: "fill", source: "circuitos",
