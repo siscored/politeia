@@ -72,3 +72,22 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
 - **Alternativas descartadas:** Athena por request (latencia/costo innecesarios para
   2,7 MB); API Gateway (Function URL alcanza para un read-only).
 - **Impacto:** `api/`, `infra/stacks/api_stack.py`.
+
+## 2026-07-21 · Frontend React + hosting Amplify (manual deploy por el CI)
+- **Contexto:** hacía falta el frontend real (no el prototipo/artifact).
+- **Decisión:** app **React + Vite** en `web/` (monorepo). Hosting en Amplify app
+  `politeia-web`, **sin conectar el repo** (evita manejar un token de GitHub): el CI
+  buildea `web/` y sube el artefacto por *manual deployment* (`create-deployment` +
+  `start-deployment`), autenticado por el OIDC que ya teníamos. El front consume el
+  API en vivo + GeoJSON bundleado. URL: `https://main.d3w3982cnzzi0m.amplifyapp.com`.
+- **Alternativas descartadas:** Amplify conectado a GitHub (requiere token/app);
+  S3+CloudFront (el pedido era Amplify).
+- **Impacto:** `web/`, `infra/stacks/web_stack.py`, `deploy.yml`, role OIDC.
+
+## 2026-07-21 · Fixes de correctitud del API del mapa
+- **CORS duplicado:** la Function URL **y** el handler seteaban ambos
+  `Access-Control-Allow-Origin` → con `Origin` del browser se duplicaba y el fetch se
+  rechazaba. Se quitó el CORS de la Function URL; lo maneja solo el handler.
+- **% sobre positivos:** la composición y el % del ganador ahora **excluyen
+  BLANCO/NULO** (convención electoral). Antes el denominador los incluía y subestimaba
+  (Pilar 2025 Dip.Nac: 42,8 → **44,2%**).

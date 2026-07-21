@@ -32,5 +32,7 @@ Decisiones: [`docs/DECISIONES.md`](./docs/DECISIONES.md).
   `ingest/junta_pba` y `ingest/andytow`: pendientes.
 - `api/mapa` — Lambda `politeia-api-mapa` (Function URL): sirve `vista_mapa` por circuito
   para el frontend. El mapa joinea con `procesados/geo/circuitos_pilar_sanfernando.geojson`.
+- `web/` — Frontend React+Vite "Comando IA" (mapa por circuito). Hosteado en Amplify
+  (`politeia-web`), desplegado por el CI. Prod: https://main.d3w3982cnzzi0m.amplifyapp.com
 
 Mockup ("Comando IA"): https://main.d8jx2krovqxf.amplifyapp.com/
