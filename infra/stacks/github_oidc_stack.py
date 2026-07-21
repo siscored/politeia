@@ -21,8 +21,7 @@ class GithubOidcStack(Stack):
         scope: Construct,
         construct_id: str,
         *,
-        github_owner: str,
-        github_repo: str,
+        github_subjects: list,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -35,10 +34,10 @@ class GithubOidcStack(Stack):
             client_ids=["sts.amazonaws.com"],
         )
 
-        # Alcance del trust: cualquier ref del repo (branches, PRs, tags).
-        # Endurecer a "repo:owner/repo:ref:refs/heads/main" cuando quieras
-        # limitar el deploy solo a main.
-        subject = f"repo:{github_owner}/{github_repo}:*"
+        # Alcance del trust: los 'sub' permitidos (ver app.py). Se aceptan el
+        # formato estandar y el custom con IDs numericos que usa la org siscored.
+        # Endurecer a ":ref:refs/heads/main" cuando quieras limitar solo a main.
+        subject = github_subjects
 
         # 2. Role asumido por GitHub Actions via el token OIDC.
         deploy_role = iam.Role(
