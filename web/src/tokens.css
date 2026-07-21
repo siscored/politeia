@@ -1,0 +1,55 @@
+/* ===========================================================================
+   POLITEIA · Design System — tokens
+   Única fuente de verdad de la UI. Todo componente estila con estas variables,
+   nunca con hex sueltos. Doc: docs/DESIGN_SYSTEM.md
+   =========================================================================== */
+:root{
+  /* --- Marca --- */
+  --brand:#0d9488;            /* teal, acento principal */
+  --brand-ink:#00201d;        /* texto sobre el acento */
+  --brand-soft:#ccfbf1;
+
+  /* --- Neutrales (shell claro + sidebar oscuro, como el mockup) --- */
+  --app-bg:#eef1f5;
+  --surface:#ffffff;
+  --surface-2:#f6f8fb;
+  --sidebar:#0e1a2b;
+  --sidebar-ink:#c7d3e4;
+  --sidebar-muted:#64748b;
+  --ink:#0f1b2d;
+  --ink-2:#33445c;
+  --muted:#64748b;
+  --line:#e2e8f1;
+  --line-strong:#cbd5e1;
+
+  /* --- Mapa (panel oscuro) --- */
+  --map-panel:#0e1a2b;
+  --map-overlay:rgba(14,26,43,.94);
+  --map-line:#26374f;
+  --map-muted:#8aa0bd;
+
+  /* --- Semánticos (estado; separados del acento) --- */
+  --good:#16a34a; --warn:#d97706; --crit:#dc2626;
+
+  /* --- Fuerzas políticas (idéntico a families.js) --- */
+  --pol-peronismo:#2563eb;
+  --pol-jxc:#16a34a;
+  --pol-lla:#eab308;
+  --pol-massismo:#ea580c;
+  --pol-ucr:#0891b2;
+  --pol-izquierda:#9333ea;
+  --pol-otras:#94a3b8;
+
+  /* --- Tipografía --- */
+  --f-ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --fs-eyebrow:10.5px; --fs-label:11px; --fs-sm:12.5px; --fs-body:13.5px;
+  --fs-h3:16px; --fs-h2:20px; --fs-stat:26px;
+  --ls-eyebrow:.16em; --ls-label:.12em;
+
+  /* --- Espaciado / radios / sombra --- */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:28px;
+  --r-sm:8px; --r-md:12px; --r-lg:14px; --r-pill:999px;
+  --shadow-sm:0 1px 2px rgba(15,27,45,.06);
+  --shadow:0 1px 2px rgba(15,27,45,.06),0 8px 24px rgba(15,27,45,.08);
+}

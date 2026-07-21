@@ -25,7 +25,7 @@
 Plataforma de **inteligencia electoral** para campañas y gestión política en la
 Argentina. Dos módulos en esta etapa: **Inteligencia** (analítica sobre datos duros)
 y **Defensa** (escucha en tiempo real + simulación de impacto). Mockup de referencia:
-`https://main.d8jx2krovqxf.amplifyapp.com/`.
+`https://main.d1pthxba9jy105.amplifyapp.com/`.
 
 ## 2. Alcance y HUECOS ABIERTOS (leer antes de tocar nada)
 

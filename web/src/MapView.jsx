@@ -1,62 +1,121 @@
-import React, { useMemo } from "react";
-import { famOf } from "./families.js";
+import { useEffect, useRef } from "react";
+import maplibregl from "maplibre-gl";
 
-function ringsOf(g) {
-  if (g.type === "Polygon") return g.coordinates;
-  if (g.type === "MultiPolygon") return g.coordinates.flat();
-  return [];
+// Basemap oscuro sin API key (equivalente al Google Maps del mockup).
+// Estilo raster inline (tiles oscuros de CARTO): carga siempre, sin depender
+// de glyphs/sprite vectoriales. A futuro se cambia por el SDK de Google Maps.
+const STYLE = {
+  version: 8,
+  sources: {
+    carto: {
+      type: "raster",
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+      attribution: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    },
+  },
+  layers: [{ id: "carto-base", type: "raster", source: "carto" }],
+};
+
+function eachCoord(geom, fn) {
+  const rings = geom.type === "Polygon" ? geom.coordinates
+    : geom.type === "MultiPolygon" ? geom.coordinates.flat() : [];
+  rings.forEach((r) => r.forEach(fn));
+}
+function centroid(feature) {
+  let sx = 0, sy = 0, n = 0;
+  eachCoord(feature.geometry, (c) => { sx += c[0]; sy += c[1]; n++; });
+  return [sx / n, sy / n];
 }
 
-function makeProjector(features) {
-  let lat0 = 0, n = 0;
-  features.forEach((f) => ringsOf(f.geometry).forEach((r) => r.forEach((p) => { lat0 += p[1]; n++; })));
-  lat0 /= n || 1;
-  const k = Math.cos((lat0 * Math.PI) / 180);
-  let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
-  features.forEach((f) => ringsOf(f.geometry).forEach((r) => r.forEach((p) => {
-    const x = p[0] * k, y = p[1];
-    if (x < minx) minx = x; if (x > maxx) maxx = x;
-    if (y < miny) miny = y; if (y > maxy) maxy = y;
-  })));
-  const W = 100, H = 100, pad = 6;
-  const s = Math.min((W - 2 * pad) / (maxx - minx), (H - 2 * pad) / (maxy - miny));
-  const ox = (W - s * (maxx - minx)) / 2, oy = (H - s * (maxy - miny)) / 2;
-  return (p) => [ox + (p[0] * k - minx) * s, H - (oy + (p[1] - miny) * s)];
-}
+export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
+  const boxRef = useRef(null);
+  const mapRef = useRef(null);
+  const readyRef = useRef(false);
+  const markersRef = useRef([]);
+  const distritoRef = useRef(null);
+  const selRef = useRef(null);
+  // refs con lo último de cada render (evita closures viejos en los callbacks)
+  const dataRef = useRef(coloredGeo);
+  const ctxRef = useRef({ distrito, selected });
+  dataRef.current = coloredGeo;
+  ctxRef.current = { distrito, selected };
 
-function pathD(feature, proj) {
-  let d = "";
-  ringsOf(feature.geometry).forEach((r) => {
-    r.forEach((p, i) => { const q = proj(p); d += (i ? "L" : "M") + q[0].toFixed(2) + " " + q[1].toFixed(2); });
-    d += "Z";
-  });
-  return d;
-}
+  useEffect(() => {
+    const map = new maplibregl.Map({
+      container: boxRef.current, style: STYLE,
+      center: [-58.9, -34.45], zoom: 10.5, attributionControl: false,
+    });
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+    mapRef.current = map;
+    map.on("error", (e) => console.error("MAPLIBRE", e && e.error && e.error.message));
+    // El contenedor a veces no tiene tamaño estable al crear el mapa y el evento
+    // 'load' queda trabado hasta un resize. Forzamos algunos resize escalonados.
+    [0, 250, 700].forEach((t) => setTimeout(() => { try { map.resize(); } catch (_) {} }, t));
 
-export default function MapView({ features, lookup, selected, onHover }) {
-  const paths = useMemo(() => {
-    if (!features.length) return [];
-    const proj = makeProjector(features);
-    return features.map((f) => ({
-      cid: f.properties.circuito_id,
-      cabecera: f.properties.cabecera,
-      d: pathD(f, proj),
-    }));
-  }, [features]);
+    map.on("load", () => {
+      map.addSource("circuitos", { type: "geojson", data: dataRef.current, promoteId: "circuito_id" });
+      map.addLayer({
+        id: "fill", type: "fill", source: "circuitos",
+        paint: { "fill-color": ["coalesce", ["get", "fillColor"], "#334155"], "fill-opacity": ["coalesce", ["get", "fillOpacity"], 0.62] },
+      });
+      map.addLayer({
+        id: "outline", type: "line", source: "circuitos",
+        paint: {
+          "line-color": "#ffffff",
+          "line-width": ["case", ["boolean", ["feature-state", "selected"], false], 3.2, 1],
+          "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 1, 0.45],
+        },
+      });
+      map.on("click", "fill", (e) => onSelect(e.features[0].properties.circuito_id));
+      map.on("mouseenter", "fill", () => { map.getCanvas().style.cursor = "pointer"; });
+      map.on("mouseleave", "fill", () => { map.getCanvas().style.cursor = ""; });
+      readyRef.current = true;
+      sync();
+    });
 
-  return (
-    <svg className="map" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"
-      role="img" aria-label="Mapa electoral por circuito">
-      {paths.map((p) => {
-        const rec = lookup(p.cid);
-        const color = rec ? famOf(rec.g).c : "#3a4a63";
-        const cls = "circ" + (selected && selected !== p.cid ? " dim" : "");
-        return (
-          <path key={p.cid} className={cls} d={p.d} fill={color} fillOpacity="0.92"
-            onMouseEnter={() => onHover(p.cid)}
-            onClick={() => onHover(p.cid)} />
-        );
-      })}
-    </svg>
-  );
+    // Clave: el contenedor puede no tener tamaño al crear el mapa → resize.
+    const ro = new ResizeObserver(() => map.resize());
+    ro.observe(boxRef.current);
+    return () => { ro.disconnect(); map.remove(); readyRef.current = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // re-sincronizar en cada render (usa dataRef/ctxRef = lo último)
+  useEffect(() => { if (readyRef.current) sync(); });
+
+  function sync() {
+    const map = mapRef.current;
+    if (!map || !map.getSource("circuitos")) return;
+    const data = dataRef.current;
+    const { distrito, selected } = ctxRef.current;
+
+    map.getSource("circuitos").setData(data);
+
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = data.features.map((f) => {
+      const el = document.createElement("div");
+      el.className = "clabel";
+      el.textContent = f.properties.circuito_raw;
+      return new maplibregl.Marker({ element: el }).setLngLat(centroid(f)).addTo(map);
+    });
+
+    if (distrito !== distritoRef.current && data.features.length) {
+      const b = new maplibregl.LngLatBounds();
+      data.features.forEach((f) => eachCoord(f.geometry, (c) => b.extend(c)));
+      map.fitBounds(b, { padding: 50, duration: 500 });
+      distritoRef.current = distrito;
+    }
+
+    if (selRef.current) map.setFeatureState({ source: "circuitos", id: selRef.current }, { selected: false });
+    if (selected) map.setFeatureState({ source: "circuitos", id: selected }, { selected: true });
+    selRef.current = selected;
+  }
+
+  return <div className="map" ref={boxRef} />;
 }
