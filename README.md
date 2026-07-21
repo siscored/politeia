@@ -20,13 +20,15 @@ Decisiones: [`docs/DECISIONES.md`](./docs/DECISIONES.md).
   (DINE + Junta PBA). Bucket: `s3://electoral-data-851679891137` (us-east-1).
 - **Hueco #1 abierto:** falta **1983–2002** (vía Andy Tow). El contrato pedía
   "desde 1983". Ver `docs/03` y `docs/05`.
-- **Deudas:** migrar `consolidado.csv` (150 MB) a Parquet particionado; linaje fino;
-  habilitar versionado S3.
+- **Deudas:** migrar `consolidado.csv` (150 MB) a Parquet particionado; reconstruir la
+  ingesta (HUECO #5). Versionado S3: **hecho**. Linaje fino: lo escribe `politeia-ingest-dine`.
 
 ## Scaffold incluido
 - `core/` — esquema (`esquema.py`), validadores (`validadores.py`), diccionario de
   agrupaciones semilla (`agrupaciones/diccionario.csv`). Es el contrato compartido.
-- `ingest/dine`, `ingest/junta_pba` (referencian scripts del repo original),
-  `ingest/andytow` (pendiente, cierra el hueco).
+- `infra/` — IaC (AWS CDK): OIDC GitHub↔AWS, catálogo Glue/Athena, Lambda de ingesta.
+  Se despliega solo por CI/CD (`.github/workflows/`) en cada push a `main`.
+- `ingest/dine` — Lambda `politeia-ingest-dine` (reconstruida; no había script previo).
+  `ingest/junta_pba` y `ingest/andytow`: pendientes.
 
 Mockup ("Comando IA"): https://main.d8jx2krovqxf.amplifyapp.com/

@@ -46,10 +46,12 @@ deuda menor.
 - Hoy una recarga pisa el histórico sin rastro. Para un "dataset fuente de verdad",
   activar versionado en el bucket.
 
-### 5. Cerrar reproducibilidad
-- Los scripts (`descarga_dine.py`, `descarga_junta_pba.py`, `etl_consolidar.py`) y el
-  `CONTEXTO.md` viven en el repo original, **no en el bucket**. Referenciar
-  repo + commit en `docs/` para que la trazabilidad quede completa.
+### 5. Cerrar reproducibilidad (HUECO #5)
+- Los scripts que generaron el dataset actual (`descarga_dine.py`, etc.) **no existen
+  en ningún repo** — la doc los daba por existentes, era falso. El dataset queda como
+  carga histórica **sin reproductor**.
+- Se reconstruye la ingesta desde cero en `ingest/`, empezando por la Lambda
+  `politeia-ingest-dine` (baja crudo a `raw/` con linaje). Falta el catálogo de URLs.
 
 ## Pipeline (idempotente) — el que ya corre + lo pendiente
 
@@ -70,9 +72,9 @@ procesados/vista_mapa.csv    (agregado mapa)    → consumo frontend "Comando IA
 - [x] Limitaciones documentadas (provisorio↔definitivo, circuitos 2019, 09-2025).
 - [ ] **1983-2002** (Andy Tow).
 - [ ] Parquet particionado.
-- [ ] Linaje fino + `agrupacion_raw` verificado.
-- [ ] Versionado S3 activado.
-- [ ] Repo/commit de los scripts referenciado en `docs/`.
+- [~] Linaje fino: lo escribe `politeia-ingest-dine`; falta backfill del dataset viejo.
+- [x] Versionado S3 activado (2026-07-20).
+- [~] Reproducibilidad (HUECO #5): ingesta reconstruyéndose en `ingest/` (Lambda DINE).
 
 ## Reparto sugerido para cerrar
 - **A — Andy Tow 1983-2002/2011** (extractor + normalización + empalme).

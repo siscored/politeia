@@ -1,32 +1,17 @@
-# POLITEIA
+# ingest/ — Extractores de datos (run plane)
 
-Plataforma de inteligencia electoral (Argentina). Etapa actual: módulos
-**Inteligencia** y **Defensa**, sobre una base de datos histórica.
+Cada fuente baja su crudo a `raw/<fuente>/...` **antes** de transformar (raw-first),
+con linaje por objeto (`fuente_url`, `fecha_extraccion`, `sha256`). Son Lambdas
+desplegadas por CDK (`infra/stacks/ingest_stack.py`) y disparadas por EventBridge.
 
-**Empezá por [`CLAUDE.md`](./CLAUDE.md)** — contrato de trabajo y auditor, ya
-**sincronizado con el estado real del bucket S3**. Después, en orden:
+> Los scripts que generaron el dataset actual no se conservaron (HUECO #5). Todo lo
+> de acá se reconstruye desde cero.
 
-1. [`docs/01_vision_arquitectura.md`](./docs/01_vision_arquitectura.md)
-2. [`docs/02_modelo_de_datos.md`](./docs/02_modelo_de_datos.md) — esquema real + ideal
-3. [`docs/03_mvp_recopilacion.md`](./docs/03_mvp_recopilacion.md) — qué está hecho / qué falta
-4. [`docs/04_modulos_inteligencia_defensa.md`](./docs/04_modulos_inteligencia_defensa.md)
-5. [`docs/05_fuentes_de_datos.md`](./docs/05_fuentes_de_datos.md)
-6. [`docs/06_estado_bucket.md`](./docs/06_estado_bucket.md) — inventario real de S3
+## Fuentes
+| Carpeta | Fuente | Estado |
+|---|---|---|
+| `dine/` | Dirección Nacional Electoral (provisorio, por mesa) | ✅ Lambda `politeia-ingest-dine` (falta catálogo de URLs) |
+| `junta_pba/` | Junta Electoral PBA (definitivo, por municipio) | ⏳ pendiente |
+| `andytow/` | Atlas de Andy Tow (1983-2002/2011) | ⏳ pendiente (cierra HUECO #1) |
 
-Decisiones: [`docs/DECISIONES.md`](./docs/DECISIONES.md).
-
-## Estado real
-- **Dataset:** Pilar + San Fernando, **2003–2025**, ejecutivo + legislativo
-  (DINE + Junta PBA). Bucket: `s3://electoral-data-851679891137` (us-east-1).
-- **Hueco #1 abierto:** falta **1983–2002** (vía Andy Tow). El contrato pedía
-  "desde 1983". Ver `docs/03` y `docs/05`.
-- **Deudas:** migrar `consolidado.csv` (150 MB) a Parquet particionado; linaje fino;
-  habilitar versionado S3.
-
-## Scaffold incluido
-- `core/` — esquema (`esquema.py`), validadores (`validadores.py`), diccionario de
-  agrupaciones semilla (`agrupaciones/diccionario.csv`). Es el contrato compartido.
-- `ingest/dine`, `ingest/junta_pba` (referencian scripts del repo original),
-  `ingest/andytow` (pendiente, cierra el hueco).
-
-Mockup ("Comando IA"): https://main.d8jx2krovqxf.amplifyapp.com/
+El contrato de trabajo del repo está en el `CLAUDE.md` de la raíz.

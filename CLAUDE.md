@@ -37,11 +37,12 @@ y **Defensa** (escucha en tiempo real + simulación de impacto). Mockup de refer
 | **HUECO #1 (crítico)** | **1983–2002 NO está.** El contrato pedía "desde 1983". Falta la franja que cubre **Andy Tow** (presidencial/gobernador/municipal 1983-2011). Ver `docs/05`. |
 | HUECO #2 | Sept-2025 solo a nivel **municipio** (no circuito) para lo no cubierto por DINE. |
 | HUECO #3 | Formato analítico: `consolidado.csv` es 1 CSV de ~150 MB; el contrato pide **Parquet particionado**. Ver `docs/03 §migración`. |
-| HUECO #4 | Bucket **sin versionado**; una recarga pisa el histórico sin rastro. |
+| ~~HUECO #4~~ **RESUELTO** | Versionado S3 **habilitado** (2026-07-20): el bucket ya protege el histórico. |
+| **HUECO #5 (nuevo, crítico)** | **El dataset actual NO es reproducible:** los scripts que lo generaron no existen en ningún repo. Se reconstruyen desde cero en `ingest/` (primera pieza: Lambda `politeia-ingest-dine`). |
 | Fuera de alcance | Resto del país, features de IA/escucha en vivo (se diseñan, no se implementan) |
 
-**Regla dura:** un hueco documentado es aceptable; un hueco silencioso, no. Estos
-cuatro están sobre la mesa: no cerrarlos en silencio ni asumir que no existen.
+**Regla dura:** un hueco documentado es aceptable; un hueco silencioso, no. Están
+sobre la mesa: no cerrarlos en silencio ni asumir que no existen.
 
 ## 3. Estructura del repo
 
@@ -60,10 +61,12 @@ politeia/
 │   ├── esquema.py
 │   ├── validadores.py
 │   └── agrupaciones/diccionario.csv
-├── ingest/                       ← extractores/ETL (alinear con scripts del repo original)
-│   ├── dine/README.md
-│   └── junta_pba/README.md
-└── infra/                        ← IaC cuando corresponda
+├── ingest/                       ← extractores/ETL (se reconstruyen acá; no había scripts previos)
+│   ├── dine/                     ← Lambda politeia-ingest-dine (handler.py) + README
+│   ├── junta_pba/README.md       ← pendiente
+│   └── andytow/README.md         ← pendiente (hueco 1983-2002)
+├── infra/                        ← IaC (AWS CDK Python): OIDC + Glue/Athena + ingest
+└── .github/workflows/            ← CI/CD (deploy a AWS por OIDC en push a main)
 ```
 
 > Nota de naming: el bucket usa `procesados/`; el contrato usa `curated/`. Se acepta
@@ -74,13 +77,15 @@ politeia/
 
 - **Cloud:** AWS serverless. Ingesta/ETL en **Lambda** (Fargate si excede 15 min),
   orquestada por **EventBridge**/**Step Functions**.
-- **Lenguaje de ingesta/ETL:** **Python 3.12** (los scripts existentes ya son Python:
-  `descarga_dine.py`, `descarga_junta_pba.py`, `etl_consolidar.py`).
+- **Lenguaje de ingesta/ETL:** **Python 3.12**. Los scripts que produjeron el dataset
+  actual NO se conservaron (HUECO #5); se reconstruyen como Lambdas en `ingest/`,
+  empezando por `politeia-ingest-dine`.
 - **Almacenamiento:** S3 (`raw` + `procesados`/curated) con Athena para analítica;
   DynamoDB/Aurora para lecturas del API. `vista_mapa.csv` es el agregado de consumo.
 - **Formato canónico objetivo:** Parquet particionado por `distrito/anio/categoria`
   (hoy es CSV — ver HUECO #3). Mantener CSV como espejo humano.
-- **Secretos:** nunca en el repo. Credenciales AWS por profile (`fsc`) / Secrets Manager.
+- **Secretos:** nunca en el repo. Credenciales AWS por profile (`idetec`, cuenta
+  851679891137) / Secrets Manager. El CI/CD se autentica por **OIDC** (sin claves).
 - **Sin PII de votantes.** Solo agregados públicos por unidad (mesa/circuito/municipio).
 
 ## 5. Contrato de datos (resumen; detalle y schema real en `docs/02`)
@@ -98,7 +103,8 @@ Una tarea/PR NO está terminada hasta cumplir lo que aplique:
 - [ ] **Trazabilidad:** cada dato mapea a una fuente (`fuente` como mínimo; ideal
       `fuente_url` + `fecha_extraccion`).
 - [ ] **Reproducible:** hay script que regenera la salida desde `raw`. Nada editado a
-      mano sin script. (Los scripts viven en el repo original — referenciar commit.)
+      mano sin script. (Los scripts del dataset actual NO existen — HUECO #5; se
+      reconstruyen en `ingest/`.)
 - [ ] **Validado:** pasa `core/validadores.py`. Los totales cierran o el desvío está
       documentado (DINE provisorio queda 0,4–7% bajo el definitivo: es esperable).
 - [ ] **Cobertura declarada:** el módulo dice qué años/cargos/unidades cubre y cuáles

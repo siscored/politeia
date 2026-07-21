@@ -65,8 +65,8 @@ Esto justifica que la unidad analítica del producto sea el **circuito**, no el 
    renombrar. Evita ambigüedad entre repos. (Registrado como alias oficial acá.)
 2. **Parquet particionado:** `consolidado.csv` (150 MB, 1 archivo) → Parquet por
    `distrito/anio/categoria`. Mayor impacto en costo de consulta. Mantener CSV espejo.
-3. **Versionado S3:** activar para proteger el "fuente de verdad" de sobrescrituras.
-4. **Referenciar scripts:** `descarga_dine.py`, `descarga_junta_pba.py`,
-   `etl_consolidar.py` y `CONTEXTO.md` viven en el repo, no en el bucket → citar
-   repo/commit en `docs/` para cerrar la reproducibilidad.
+3. ~~**Versionado S3:** activar~~ → **HECHO** (2026-07-20).
+4. **Reproducibilidad (HUECO #5):** los scripts `descarga_dine.py`, `descarga_junta_pba.py`,
+   `etl_consolidar.py`, `CONTEXTO.md` **no existen** (la doc los daba por existentes).
+   Se reconstruye la ingesta en `ingest/` (Lambda `politeia-ingest-dine` ya desplegada).
 5. **Cerrar 1983-2002** con Andy Tow (ver `docs/03` y `docs/05`).
