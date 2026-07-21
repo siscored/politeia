@@ -51,7 +51,7 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 @media (max-width:1040px){.content{grid-template-columns:1fr}}
 
 /* ===== Mapa + barra de filtros (overlay) ===== */
-.mapcard{position:relative;border-radius:var(--r-lg);overflow:hidden;min-height:600px;
+.mapcard{position:relative;border-radius:var(--r-lg);overflow:hidden;height:640px;
   background:var(--map-panel);border:1px solid var(--map-line)}
 .map{position:absolute;inset:0}
 .maplibregl-canvas{outline:none}

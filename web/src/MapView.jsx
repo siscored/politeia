@@ -54,9 +54,10 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
     mapRef.current = map;
     map.on("error", (e) => console.error("MAPLIBRE", e && e.error && e.error.message));
-    // El contenedor a veces no tiene tamaño estable al crear el mapa y el evento
-    // 'load' queda trabado hasta un resize. Forzamos algunos resize escalonados.
-    [0, 250, 700].forEach((t) => setTimeout(() => { try { map.resize(); } catch (_) {} }, t));
+    // El 'load' de MapLibre queda trabado hasta un resize posterior a que carguen
+    // los tiles (más lento en prod). Reintentamos resize en intervalo ~2s.
+    let ticks = 0;
+    const resizeIv = setInterval(() => { try { map.resize(); } catch (_) {} if (++ticks >= 12) clearInterval(resizeIv); }, 180);
 
     map.on("load", () => {
       map.addSource("circuitos", { type: "geojson", data: dataRef.current, promoteId: "circuito_id" });
@@ -82,7 +83,7 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
     // Clave: el contenedor puede no tener tamaño al crear el mapa → resize.
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(boxRef.current);
-    return () => { ro.disconnect(); map.remove(); readyRef.current = false; };
+    return () => { clearInterval(resizeIv); ro.disconnect(); map.remove(); readyRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
