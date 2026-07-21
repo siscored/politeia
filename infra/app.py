@@ -11,6 +11,7 @@ from stacks.github_oidc_stack import GithubOidcStack
 from stacks.data_stack import DataStack
 from stacks.ingest_stack import IngestStack
 from stacks.api_stack import ApiStack
+from stacks.web_stack import WebStack
 
 # --- Config del proyecto (unica fuente de verdad para la infra) ---
 ACCOUNT = "851679891137"          # cuenta donde vive el dato (profile idetec)
@@ -69,6 +70,14 @@ ApiStack(
     data_bucket_name=DATA_BUCKET,
     env=env,
     description="API read-only del mapa electoral de POLITEIA",
+)
+
+# Stack 5: hosting del frontend en Amplify.
+WebStack(
+    app,
+    "PoliteiaWeb",
+    env=env,
+    description="Hosting Amplify del frontend Comando IA",
 )
 
 app.synth()

@@ -62,13 +62,9 @@ class ApiStack(Stack):
             )
         )
 
-        # Function URL pública con CORS (los datos electorales son públicos).
-        url = fn.add_function_url(
-            auth_type=lambda_.FunctionUrlAuthType.NONE,
-            cors=lambda_.FunctionUrlCorsOptions(
-                allowed_origins=["*"],
-                allowed_methods=[lambda_.HttpMethod.GET],
-            ),
-        )
+        # Function URL pública. El CORS lo setea el handler (un solo header):
+        # si además lo configuramos acá, la Function URL echoa el Origin y se
+        # duplica Access-Control-Allow-Origin → el browser rechaza el fetch.
+        url = fn.add_function_url(auth_type=lambda_.FunctionUrlAuthType.NONE)
 
         CfnOutput(self, "ApiMapaUrl", value=url.url, description="URL del API del mapa")

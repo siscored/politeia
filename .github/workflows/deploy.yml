@@ -32,3 +32,25 @@ jobs:
           cd infra
           pip install -r requirements.txt
           npx --yes aws-cdk@latest deploy --all --require-approval never
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build y deploy del frontend a Amplify
+        run: |
+          API_URL=$(aws cloudformation describe-stacks --stack-name PoliteiaApi \
+            --query "Stacks[0].Outputs[?OutputKey=='ApiMapaUrl'].OutputValue" --output text)
+          APP_ID=$(aws cloudformation describe-stacks --stack-name PoliteiaWeb \
+            --query "Stacks[0].Outputs[?OutputKey=='AmplifyAppId'].OutputValue" --output text)
+          echo "API=$API_URL  APP_ID=$APP_ID"
+          cd web
+          npm ci
+          VITE_API_URL="$API_URL" npm run build
+          (cd dist && zip -qr ../dist.zip .)
+          DEP=$(aws amplify create-deployment --app-id "$APP_ID" --branch-name main --output json)
+          JOB=$(echo "$DEP" | python3 -c "import sys,json;print(json.load(sys.stdin)['jobId'])")
+          URL=$(echo "$DEP" | python3 -c "import sys,json;print(json.load(sys.stdin)['zipUploadUrl'])")
+          curl -s -H "Content-Type: application/zip" --upload-file dist.zip "$URL"
+          aws amplify start-deployment --app-id "$APP_ID" --branch-name main --job-id "$JOB"
+          echo "Frontend desplegado. URL: https://main.$APP_ID.amplifyapp.com"

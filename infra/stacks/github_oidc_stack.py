@@ -59,7 +59,7 @@ class GithubOidcStack(Stack):
             ),
         )
 
-        # 3. Unico permiso: asumir los roles de CDK bootstrap (deploy acotado).
+        # 3a. Asumir los roles de CDK bootstrap (deploy de infra acotado).
         deploy_role.add_to_policy(
             iam.PolicyStatement(
                 sid="AssumeCdkBootstrapRoles",
@@ -67,6 +67,22 @@ class GithubOidcStack(Stack):
                 resources=[
                     f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-*"
                 ],
+            )
+        )
+
+        # 3b. Desplegar el frontend a Amplify (manual deployment desde el CI).
+        deploy_role.add_to_policy(
+            iam.PolicyStatement(
+                sid="DesplegarFrontendAmplify",
+                actions=[
+                    "amplify:CreateDeployment",
+                    "amplify:StartDeployment",
+                    "amplify:GetJob",
+                    "amplify:GetApp",
+                    "amplify:GetBranch",
+                    "cloudformation:DescribeStacks",
+                ],
+                resources=["*"],
             )
         )
 
