@@ -1,0 +1,13 @@
+# datos crudos/curados (viven en S3, no en git)
+data/
+*.csv
+*.parquet
+!core/agrupaciones/diccionario.csv
+# secretos
+.env
+.env.*
+*.pem
+# python
+__pycache__/
+*.pyc
+.venv/
