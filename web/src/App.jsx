@@ -73,7 +73,7 @@ export default function App() {
         const m = (rec.comp[0].porcentaje || 0) - (rec.comp[1]?.porcentaje || 0);
         fillOpacity = Math.max(0.25, Math.min(0.92, 0.25 + m / 55));
       }
-      return { ...f, properties: { ...f.properties, fillColor: rec ? fam.c : "#334155", fillOpacity } };
+      return { ...f, properties: { ...f.properties, fillColor: rec ? fam.c : "#334155", fillOpacity, weight: rec?.validos || 0 } };
     });
     return { type: "FeatureCollection", features: feats };
   }, [features, model, colorMode]);

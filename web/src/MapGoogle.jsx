@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { famOf } from "./families.js";
+import { eachCoord, centroid, coreFeatures } from "./geoutil.js";
 
 const KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY;
 
@@ -35,23 +36,12 @@ function loadGoogle() {
   return window.__gmapsPromise;
 }
 
-function eachCoord(geom, fn) {
-  const rings = geom.type === "Polygon" ? geom.coordinates
-    : geom.type === "MultiPolygon" ? geom.coordinates.flat() : [];
-  rings.forEach((r) => r.forEach(fn));
-}
-function centroid(feature) {
-  let sx = 0, sy = 0, n = 0;
-  eachCoord(feature.geometry, (c) => { sx += c[0]; sy += c[1]; n++; });
-  return [sx / n, sy / n];
-}
-
 export default function MapGoogle({ coloredGeo, distrito, selected, onSelect }) {
   const boxRef = useRef(null);
   const mapRef = useRef(null);
   const featsRef = useRef([]);
   const markersRef = useRef([]);
-  const distritoRef = useRef(null);
+  const fitRef = useRef({ sig: null });
   const dataRef = useRef(coloredGeo);
   dataRef.current = coloredGeo;
 
@@ -110,11 +100,15 @@ export default function MapGoogle({ coloredGeo, distrito, selected, onSelect }) 
     });
 
     // fit bounds al cambiar de distrito
-    if (distrito !== distritoRef.current && data.features.length) {
+    // Re-encuadrar cuando cambia el CONJUNTO poblado (distrito nuevo, o cuando
+    // llegan los votos y coreFeatures pasa de 16 → 13 excluyendo el delta).
+    const core = coreFeatures(data.features);
+    const sig = distrito + "|" + core.map((f) => f.properties.circuito_id).sort().join(",");
+    if (core.length && sig !== fitRef.current.sig) {
       const b = new g.LatLngBounds();
-      data.features.forEach((f) => eachCoord(f.geometry, (co) => b.extend({ lat: co[1], lng: co[0] })));
+      core.forEach((f) => eachCoord(f.geometry, (co) => b.extend({ lat: co[1], lng: co[0] })));
       map.fitBounds(b, 48);
-      distritoRef.current = distrito;
+      fitRef.current = { sig };
     }
 
     // selección: resaltar el circuito elegido

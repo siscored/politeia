@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
+import { eachCoord, centroid, coreFeatures } from "./geoutil.js";
 
 // Basemap oscuro sin API key (equivalente al Google Maps del mockup).
 // Estilo raster inline (tiles oscuros de CARTO): carga siempre, sin depender
@@ -23,23 +24,12 @@ const STYLE = {
   layers: [{ id: "carto-base", type: "raster", source: "carto", paint: { "raster-fade-duration": 0 } }],
 };
 
-function eachCoord(geom, fn) {
-  const rings = geom.type === "Polygon" ? geom.coordinates
-    : geom.type === "MultiPolygon" ? geom.coordinates.flat() : [];
-  rings.forEach((r) => r.forEach(fn));
-}
-function centroid(feature) {
-  let sx = 0, sy = 0, n = 0;
-  eachCoord(feature.geometry, (c) => { sx += c[0]; sy += c[1]; n++; });
-  return [sx / n, sy / n];
-}
-
 export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
   const boxRef = useRef(null);
   const mapRef = useRef(null);
   const readyRef = useRef(false);
   const markersRef = useRef([]);
-  const distritoRef = useRef(null);
+  const fitRef = useRef({ sig: null });
   const selRef = useRef(null);
   const dataRef = useRef(coloredGeo);
   dataRef.current = coloredGeo;
@@ -116,11 +106,13 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
       return new maplibregl.Marker({ element: el }).setLngLat(centroid(f)).addTo(map);
     });
 
-    if (distrito !== distritoRef.current && data.features.length) {
+    const core = coreFeatures(data.features);
+    const sig = distrito + "|" + core.map((f) => f.properties.circuito_id).sort().join(",");
+    if (core.length && sig !== fitRef.current.sig) {
       const b = new maplibregl.LngLatBounds();
-      data.features.forEach((f) => eachCoord(f.geometry, (c) => b.extend(c)));
+      core.forEach((f) => eachCoord(f.geometry, (c) => b.extend(c)));
       map.fitBounds(b, { padding: 50, duration: 400 });
-      distritoRef.current = distrito;
+      fitRef.current = { sig };
     }
     map.triggerRepaint();
   }
