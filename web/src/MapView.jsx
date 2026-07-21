@@ -54,9 +54,15 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
     map.on("error", (e) => console.error("MAPLIBRE", e && e.error && e.error.message));
 
-    // Resize+repaint escalonados: el mapa a veces no tiene tamaño estable al
-    // crear (queda negro) y hay que patear el render tras cargar los tiles.
-    const resizeTimers = [0, 250, 700, 1500, 2600].map((t) => setTimeout(() => { try { map.resize(); map.triggerRepaint(); } catch (_) {} }, t));
+    // (1) Resizes por si el contenedor no tenía tamaño estable al crear (negro).
+    const resizeTimers = [0, 300].map((t) => setTimeout(() => { try { map.resize(); } catch (_) {} }, t));
+    // (2) Nudge ANIMADO de cámara (net-cero): corre el render loop ~1s con cambios
+    // de transform, que es lo único que pinta los tiles raster del basemap. Un
+    // resize/repaint solo NO alcanza: hace falta el movimiento (igual que scrollear).
+    const nudgeTimers = [
+      setTimeout(() => { try { map.panBy([0, 1], { duration: 500 }); } catch (_) {} }, 500),
+      setTimeout(() => { try { map.panBy([0, -1], { duration: 500 }); } catch (_) {} }, 1200),
+    ];
 
     map.on("style.load", () => {
       map.addSource("circuitos", { type: "geojson", data: dataRef.current, promoteId: "circuito_id" });
@@ -84,7 +90,7 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
     ro.observe(boxRef.current);
     requestAnimationFrame(() => map.resize());
 
-    return () => { resizeTimers.forEach(clearTimeout); ro.disconnect(); map.remove(); readyRef.current = false; };
+    return () => { [...resizeTimers, ...nudgeTimers].forEach(clearTimeout); ro.disconnect(); map.remove(); readyRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
