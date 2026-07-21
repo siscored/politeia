@@ -56,12 +56,12 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
 
     // (1) Resizes por si el contenedor no tenía tamaño estable al crear (negro).
     const resizeTimers = [0, 300].map((t) => setTimeout(() => { try { map.resize(); } catch (_) {} }, t));
-    // (2) Nudge ANIMADO de cámara (net-cero): corre el render loop ~1s con cambios
-    // de transform, que es lo único que pinta los tiles raster del basemap. Un
-    // resize/repaint solo NO alcanza: hace falta el movimiento (igual que scrollear).
+    // (2) Nudge de ZOOM animado (lo único que pintó el basemap al scrollear).
+    // Después de que cargan los tiles (~1s): zoom +0.4 y -0.4 (net-cero) corre el
+    // render loop con movimiento real y pinta el raster.
     const nudgeTimers = [
-      setTimeout(() => { try { map.panBy([0, 1], { duration: 500 }); } catch (_) {} }, 500),
-      setTimeout(() => { try { map.panBy([0, -1], { duration: 500 }); } catch (_) {} }, 1200),
+      setTimeout(() => { try { map.zoomTo(map.getZoom() + 0.4, { duration: 350 }); } catch (_) {} }, 1000),
+      setTimeout(() => { try { map.zoomTo(map.getZoom() - 0.4, { duration: 350 }); } catch (_) {} }, 1450),
     ];
 
     map.on("style.load", () => {
