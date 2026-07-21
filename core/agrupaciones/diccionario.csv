@@ -1,10 +1,64 @@
 agrupacion_raw,agrupacion_id,familia,anio_desde,anio_hasta,distrito,ambito,nota
 Partido Justicialista,pj,peronismo,1983,,Buenos Aires,,base peronista
-Frente para la Victoria,fpv,peronismo,2003,2015,Buenos Aires,,kirchnerismo
-Frente de Todos,fdt,peronismo,2019,2021,Buenos Aires,,coalicion peronista 2019
+Frente Justicialista,pj,peronismo,1983,,Buenos Aires,,frente PJ
+Frejupo,pj,peronismo,1989,1991,Buenos Aires,,frente justicialista de unidad popular
+Frente para la Victoria,fpv,peronismo,2003,2015,Buenos Aires,,kirchnerismo (incluye variantes Alianza FpV)
+Unidad Ciudadana,unidad_ciudadana,peronismo,2017,2017,Buenos Aires,,CFK 2017
+Frente de Todos,fdt,peronismo,2019,2021,Buenos Aires,,coalicion peronista
 Union por la Patria,uxp,peronismo,2023,2023,Buenos Aires,,sucesor FdT 2023
 Fuerza Patria,fuerza_patria,peronismo,2025,,Buenos Aires,,frente peronista PBA 2025
-Union Civica Radical,ucr,radicalismo,1983,,Buenos Aires,,base radical
-Cambiemos,cambiemos,pro_jxc,2015,2017,Buenos Aires,,coalicion PRO+UCR+CC
-Juntos por el Cambio,jxc,pro_jxc,2019,2023,Buenos Aires,,sucesor Cambiemos
-La Libertad Avanza,lla,libertario,2021,,Buenos Aires,,nuevo eje 2021+
+Patria Grande,patria_grande,peronismo,2019,,Buenos Aires,,Grabois dentro de FdT/UxP
+Todos por Buenos Aires,todos_por_ba,pj_federal,2017,2017,Buenos Aires,,Randazzo peronismo disidente NO UxP
+Principios y Valores,principios_valores,pj_federal,2021,,Buenos Aires,,Guillermo Moreno peronismo disidente
+Compromiso Federal,compromiso_federal,pj_federal,2015,2019,San Luis,,Rodriguez Saa
+Consenso Federal,consenso_federal,pj_federal,2019,2019,Nacional,,Lavagna centro
+Hacemos por Nuestro Pais,hacemos,pj_federal,2023,,Cordoba,,Schiaretti cordobesismo
+Vamos con Vos,vamos_con_vos,pj_federal,2021,,Buenos Aires,,Randazzo 2021
+Union para el Desarrollo Social,udeso,pj_federal,2011,2011,Buenos Aires,,De Narvaez mas UCR centro
+Unidad Federalista,paufe,pj_federal,,,Buenos Aires,,PAUFE
+Union Popular,union_popular,pj_federal,,,Buenos Aires,,
+Provincias Unidas,provincias_unidas,pj_federal,2025,,Nacional,,frente de gobernadores
+Frente Popular,frente_popular,frentes_populares,,,Buenos Aires,,frente popular bonaerense
+Frente Popular Bonaerense,frepobo,frentes_populares,,,Buenos Aires,,FREPOBO
+Accion Federalista para Buenos Aires,afeba,frentes_populares,2003,2009,Buenos Aires,,AFEBA
+Propuesta Republicana,pro,jxc,2005,,Buenos Aires,,PRO Macri
+Union PRO,pro,jxc,2009,2013,Buenos Aires,,frente PRO
+Cambiemos,cambiemos,jxc,2015,2017,Buenos Aires,,coalicion PRO mas UCR mas CC
+Juntos por el Cambio,jxc,jxc,2019,2023,Buenos Aires,,sucesor Cambiemos
+Juntos,jxc,jxc,2021,2021,Buenos Aires,,alias PBA 2021
+Republicano Federal,republicano_federal,jxc,,,Buenos Aires,,
+Afirmacion para una Republica Igualitaria,ari,cc_ari,2003,2007,Nacional,,ARI Carrio compitio sola pre-2015
+Coalicion Civica,cc,cc_ari,2007,,Buenos Aires,,Coalicion Civica
+Coalicion Civica ARI,cc_ari,cc_ari,2009,,Buenos Aires,,CC-ARI integra JxC desde 2015 pero se colorea propia
+La Libertad Avanza,lla,lla,2021,,Buenos Aires,,nuevo eje libertario 2021
+Avanza Libertad,avanza_libertad,liberales,2021,2021,Buenos Aires,,Espert antecede a LLA
+Unidos por la Libertad y el Trabajo,unidos_libertad,liberales,2021,,Buenos Aires,,
+Union del Centro Democratico,ucede,liberales,1983,,Buenos Aires,,UCeDe
+Unite,unite,liberales,2019,,Buenos Aires,,revisar segun ano
+Partido Libertario,partido_libertario,liberales,,,Buenos Aires,,
+Union Celeste y Blanco,celeste_blanco,liberales,2013,,Buenos Aires,,
+Mas Valores,mas_valores,liberales,,,Buenos Aires,,Cynthia Hotton valores
+Frente Renovador,fr,massismo,2013,,Buenos Aires,,Massa
+Unidos por una Nueva Alternativa,una,massismo,2015,2015,Nacional,,UNA Massa 2015
+1Pais,1pais,massismo,2017,2017,Buenos Aires,,Massa 2017
+Frente de Izquierda y de los Trabajadores,fit,izquierda,2011,,Buenos Aires,,FIT y FIT-U
+Partido Obrero,po,izquierda,1983,,Buenos Aires,,dentro de FIT
+Partido de los Trabajadores Socialistas,pts,izquierda,,,Buenos Aires,,dentro de FIT
+Movimiento Socialista de los Trabajadores,mst,izquierda,,,Buenos Aires,,MST
+Movimiento al Socialismo,mas,izquierda,,,Buenos Aires,,MAS
+Izquierda Unida,iu,izquierda,,,Buenos Aires,,IU-PS
+Frente Amplio Progresista,fap,progresismo,2011,2013,Nacional,,GEN Socialismo Stolbizer Binner
+Progresistas,progresistas,progresismo,2015,,Buenos Aires,,
+Nuevo Encuentro,nuevo_encuentro,progresismo,2011,,Buenos Aires,,Sabbatella
+Frente Grande,frente_grande,progresismo,,,Buenos Aires,,
+Proyecto Sur,proyecto_sur,progresismo,2009,,Buenos Aires,,Pino Solanas
+Libres del Sur,libres_del_sur,progresismo,,,Buenos Aires,,
+Acuerdo Civico y Social,acuerdo_civico,progresismo,2009,2009,Buenos Aires,,UCR mas CC mas PS Cobos
+Union Civica Radical,ucr,ucr,1983,,Buenos Aires,,base radical mayoria migro a Cambiemos/JxC
+San Fernando Puede,sf_puede,vecinalismo,,,San Fernando,municipal,vecinal local
+Sumemos Pilar,sumemos_pilar,vecinalismo,,,Pilar,municipal,vecinal local
+Vecinos del Pilar,vecinos_pilar,vecinalismo,,,Pilar,municipal,vecinal local
+Blanco,blanco,no_partidario,,,,,voto en blanco
+Nulo,nulo,no_partidario,,,,,voto nulo incluye Votos Nulos
+Recurrido,recurrido,no_partidario,,,,,voto recurrido
+Impugnado,impugnado,no_partidario,,,,,voto impugnado
