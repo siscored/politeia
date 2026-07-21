@@ -8,10 +8,13 @@ fuente de verdad (ver CLAUDE.md §0 y docs/06_estado_bucket.md).
 import aws_cdk as cdk
 
 from stacks.github_oidc_stack import GithubOidcStack
+from stacks.data_stack import DataStack
 
 # --- Config del proyecto (unica fuente de verdad para la infra) ---
 ACCOUNT = "851679891137"          # cuenta donde vive el dato (profile idetec)
 REGION = "us-east-1"
+DATA_BUCKET = "electoral-data-851679891137"   # bucket fuente de verdad (ya existe)
+GLUE_DATABASE = "politeia_electoral"          # catalogo Athena (guiones no permitidos)
 GITHUB_OWNER = "siscored"
 GITHUB_REPO = "politeia"
 # La org siscored personaliza el claim OIDC e inyecta los IDs numericos
@@ -36,6 +39,16 @@ GithubOidcStack(
     github_subjects=github_subjects,
     env=env,
     description="OIDC GitHub Actions + deploy role para POLITEIA",
+)
+
+# Stack 2: capa de datos consultable (Glue + Athena) sobre lo curado.
+DataStack(
+    app,
+    "PoliteiaData",
+    data_bucket_name=DATA_BUCKET,
+    database_name=GLUE_DATABASE,
+    env=env,
+    description="Catalogo Glue + Athena sobre datos curados de POLITEIA",
 )
 
 app.synth()
