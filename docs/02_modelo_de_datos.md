@@ -81,6 +81,7 @@ El contrato canónico de POLITEIA pide, además de lo anterior:
 | `ambito` (nac/prov/mun) | implícito en cargo/fuente | agregar columna explícita |
 | `agrupacion_raw` (texto original preservado) | **no garantizado** | **verificar**: si `agrupacion_nombre` ya es el crudo, documentarlo; si se normalizó pisando el original, recuperarlo de `raw/` |
 | `fuente_url`, `fecha_extraccion`, `hash_registro` | solo `fuente` | agregar linaje fino en el próximo ETL |
+| `electores`/`padron` por unidad (para calcular **participación %**) | **no está** | **deuda #6**: `vista_mapa` trae `votos`, no el padrón. El mockup mostraba `padron` por circuito (dato de panel). Sumar la columna de electores desde DINE (nº de inscriptos por mesa→circuito) en el próximo ETL. Habilita participación y voto en blanco/nulo como % del padrón. |
 | Parquet particionado `distrito/anio/categoria` | es CSV | migrar (deuda #3) |
 
 > **Regla que se mantiene:** `agrupacion_raw` no se pisa. Si el ETL actual ya
