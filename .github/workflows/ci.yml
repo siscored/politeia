@@ -1,0 +1,32 @@
+name: CI
+
+# Corre en PRs a main y en push a ramas de trabajo.
+# NO despliega nada: solo valida contrato de datos + sintetiza la infra.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validadores del contrato de datos (core/)
+        run: |
+          python -m pip install --upgrade pip
+          # TODO: cuando core/ tenga requirements, instalarlos y correr
+          #       core/validadores.py sobre un fixture chico de raw/.
+          echo "TODO: ejecutar core/validadores.py sobre fixture"
+
+      - name: CDK synth (chequeo de infra sin desplegar)
+        run: |
+          cd infra
+          pip install -r requirements.txt
+          npx --yes aws-cdk@latest synth --all

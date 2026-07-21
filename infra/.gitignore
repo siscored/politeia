@@ -1,0 +1,7 @@
+# artefactos de sintesis CDK
+cdk.out/
+*.js
+*.d.ts
+# entorno local
+.venv/
+__pycache__/
