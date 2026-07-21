@@ -10,6 +10,7 @@ import aws_cdk as cdk
 from stacks.github_oidc_stack import GithubOidcStack
 from stacks.data_stack import DataStack
 from stacks.ingest_stack import IngestStack
+from stacks.api_stack import ApiStack
 
 # --- Config del proyecto (unica fuente de verdad para la infra) ---
 ACCOUNT = "851679891137"          # cuenta donde vive el dato (profile idetec)
@@ -59,6 +60,15 @@ IngestStack(
     data_bucket_name=DATA_BUCKET,
     env=env,
     description="Lambdas de ingesta de POLITEIA (raw/)",
+)
+
+# Stack 4: API read-only del mapa (lo consume el frontend).
+ApiStack(
+    app,
+    "PoliteiaApi",
+    data_bucket_name=DATA_BUCKET,
+    env=env,
+    description="API read-only del mapa electoral de POLITEIA",
 )
 
 app.synth()
