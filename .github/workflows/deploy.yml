@@ -38,6 +38,8 @@ jobs:
           node-version: "20"
 
       - name: Build y deploy del frontend a Amplify
+        env:
+          VITE_GOOGLE_MAPS_KEY: ${{ secrets.VITE_GOOGLE_MAPS_KEY }}
         run: |
           API_URL=$(aws cloudformation describe-stacks --stack-name PoliteiaApi \
             --query "Stacks[0].Outputs[?OutputKey=='ApiMapaUrl'].OutputValue" --output text)

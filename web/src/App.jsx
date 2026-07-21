@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import geo from "./circuitos.json";
 import MapView from "./MapView.jsx";
+import MapGoogle from "./MapGoogle.jsx";
 import { famOf, OTHER, title } from "./families.js";
 import { fetchMeta, fetchMapa } from "./api.js";
+
+// Con key de Google → Google Maps; si no, fallback a MapLibre.
+const HAS_GMAPS = !!import.meta.env.VITE_GOOGLE_MAPS_KEY;
+const MapComp = HAS_GMAPS ? MapGoogle : MapView;
 
 const NAV = [
   ["00", "Resumen"], ["01", "Defensa"], ["02", "Inteligencia"],
@@ -142,8 +147,8 @@ export default function App() {
                   <div className="seg" style={{ flexWrap: "wrap" }}>{cargos.map((c) => <button key={c} className={cargo === c ? "on" : ""} onClick={() => setCargo(c)}>{niceCargo(c)}</button>)}</div>
                 </div>
               </div>
-              <MapView coloredGeo={coloredGeo} distrito={distrito} selected={selected} onSelect={setSelected} />
-              <div className="map-credit">● MapLibre · basemap oscuro (sin key)</div>
+              <MapComp coloredGeo={coloredGeo} distrito={distrito} selected={selected} onSelect={setSelected} />
+              <div className="map-credit">● {HAS_GMAPS ? "Google Maps · capa real" : "MapLibre · basemap oscuro"}</div>
             </div>
 
             {/* ---- Panel ---- */}
