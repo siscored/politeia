@@ -104,6 +104,9 @@ def lambda_handler(event, context):
 
     circuitos = {}
     for r in sel:
+        pct = _num(r["porcentaje"])
+        if pct is None:
+            continue  # BLANCO/NULO/etc: voto no positivo, fuera del mapa y del %
         cid = r["circuito_id"]
         c = circuitos.setdefault(cid, {
             "circuito_id": cid,
@@ -115,7 +118,7 @@ def lambda_handler(event, context):
         item = {
             "agrupacion": r["agrupacion_nombre"],
             "votos": int(_num(r["votos"]) or 0),
-            "porcentaje": _num(r["porcentaje"]),
+            "porcentaje": pct,
             "gana": str(r.get("gana", "")).lower() == "true",
         }
         c["composicion"].append(item)
