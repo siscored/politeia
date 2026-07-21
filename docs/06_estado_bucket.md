@@ -17,8 +17,9 @@ electoral/
 │   ├── README_datos.md            (contrato de datos del dataset)
 │   └── resumen_exploratorio.md    (hallazgos + argumento del nivel circuito)
 ├── procesados/                    (= curated)
-│   ├── consolidado.csv            (19 col, hechos nivel mesa, ~150 MB)
-│   └── vista_mapa.csv             (11 col, agregado para el mapa)
+│   ├── consolidado/consolidado.csv  (19 col, hechos nivel mesa, ~150 MB)
+│   ├── vista_mapa/vista_mapa.csv     (11 col, agregado para el mapa)
+│   └── geo/circuitos_pilar_sanfernando.geojson  (37 polígonos, join por circuito_id)
 ├── raw/
 │   ├── dine/<municipio>/          (por mesa, 2011-2025)
 │   │   └── <año>_<paso|generales>_<cargo>.csv

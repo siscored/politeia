@@ -52,3 +52,23 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
 - **Decisión:** todo recurso AWS lleva prefijo `politeia-` (Lambdas, roles, etc.) para
   agruparlos/identificarlos en la consola.
 - **Impacto:** toda la infra.
+
+## 2026-07-21 · GeoJSON de circuitos (polígonos del mapa)
+- **Contexto:** el bucket no tenía geometría; el mapa necesita polígonos para dibujar.
+- **Decisión:** se obtuvo el GeoJSON de circuitos de PBA (repo
+  `tartagalensis/circuitos_electorales_AR`, año 2025, derivado del oficial de
+  `datos.gba.gob.ar`), se filtró a Pilar + San Fernando (**37 circuitos**) y se
+  normalizó `circuito_id` a 5 chars (`0768`→`00768`) para joinear con `vista_mapa`.
+  Verificado **37/37**. Subido a `procesados/geo/circuitos_pilar_sanfernando.geojson`.
+- **Alternativas descartadas:** catálogo oficial `datos.gba.gob.ar` (el server cortaba
+  la descarga); usar CABA data (no corresponde, son partidos de PBA).
+- **Impacto:** cierra el gap del mapa; `procesados/geo/`, frontend.
+
+## 2026-07-21 · API del mapa: Lambda + Function URL leyendo el CSV
+- **Contexto:** el frontend necesita un endpoint de datos del mapa.
+- **Decisión:** Lambda `politeia-api-mapa` con **Function URL** pública (CORS), que lee
+  `vista_mapa.csv` **directo** (dataset chico, 2,7 MB) en vez de Athena en el camino
+  crítico. Athena queda para analítica ad-hoc.
+- **Alternativas descartadas:** Athena por request (latencia/costo innecesarios para
+  2,7 MB); API Gateway (Function URL alcanza para un read-only).
+- **Impacto:** `api/`, `infra/stacks/api_stack.py`.

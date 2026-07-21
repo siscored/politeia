@@ -26,9 +26,11 @@ Decisiones: [`docs/DECISIONES.md`](./docs/DECISIONES.md).
 ## Scaffold incluido
 - `core/` — esquema (`esquema.py`), validadores (`validadores.py`), diccionario de
   agrupaciones semilla (`agrupaciones/diccionario.csv`). Es el contrato compartido.
-- `infra/` — IaC (AWS CDK): OIDC GitHub↔AWS, catálogo Glue/Athena, Lambda de ingesta.
-  Se despliega solo por CI/CD (`.github/workflows/`) en cada push a `main`.
+- `infra/` — IaC (AWS CDK): OIDC GitHub↔AWS, catálogo Glue/Athena, Lambda de ingesta,
+  API del mapa. Se despliega solo por CI/CD (`.github/workflows/`) en cada push a `main`.
 - `ingest/dine` — Lambda `politeia-ingest-dine` (reconstruida; no había script previo).
   `ingest/junta_pba` y `ingest/andytow`: pendientes.
+- `api/mapa` — Lambda `politeia-api-mapa` (Function URL): sirve `vista_mapa` por circuito
+  para el frontend. El mapa joinea con `procesados/geo/circuitos_pilar_sanfernando.geojson`.
 
 Mockup ("Comando IA"): https://main.d8jx2krovqxf.amplifyapp.com/
