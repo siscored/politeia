@@ -56,13 +56,18 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
 
     // (1) Resizes por si el contenedor no tenía tamaño estable al crear (negro).
     const resizeTimers = [0, 300].map((t) => setTimeout(() => { try { map.resize(); } catch (_) {} }, t));
-    // (2) Nudge de ZOOM animado (lo único que pintó el basemap al scrollear).
-    // Después de que cargan los tiles (~1s): zoom +0.4 y -0.4 (net-cero) corre el
-    // render loop con movimiento real y pinta el raster.
-    const nudgeTimers = [
-      setTimeout(() => { try { map.zoomTo(map.getZoom() + 0.4, { duration: 350 }); } catch (_) {} }, 1000),
-      setTimeout(() => { try { map.zoomTo(map.getZoom() - 0.4, { duration: 350 }); } catch (_) {} }, 1450),
-    ];
+    // (2) Repaint CONTINUO por ~4s (requestAnimationFrame): mantiene el render loop
+    // corriendo para dibujar los tiles del basemap apenas llegan. Sin esto el mapa
+    // queda 'idle' y los tiles no se pintan hasta que interactúes.
+    let rafId = 0;
+    const startT = performance.now();
+    const pump = () => {
+      const mp = mapRef.current;
+      if (!mp) return;
+      try { mp.triggerRepaint(); } catch (_) {}
+      if (performance.now() - startT < 4000) rafId = requestAnimationFrame(pump);
+    };
+    rafId = requestAnimationFrame(pump);
 
     map.on("style.load", () => {
       map.addSource("circuitos", { type: "geojson", data: dataRef.current, promoteId: "circuito_id" });
@@ -90,7 +95,7 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
     ro.observe(boxRef.current);
     requestAnimationFrame(() => map.resize());
 
-    return () => { [...resizeTimers, ...nudgeTimers].forEach(clearTimeout); ro.disconnect(); map.remove(); readyRef.current = false; };
+    return () => { resizeTimers.forEach(clearTimeout); cancelAnimationFrame(rafId); ro.disconnect(); map.remove(); readyRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
