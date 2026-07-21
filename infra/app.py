@@ -9,6 +9,7 @@ import aws_cdk as cdk
 
 from stacks.github_oidc_stack import GithubOidcStack
 from stacks.data_stack import DataStack
+from stacks.ingest_stack import IngestStack
 
 # --- Config del proyecto (unica fuente de verdad para la infra) ---
 ACCOUNT = "851679891137"          # cuenta donde vive el dato (profile idetec)
@@ -49,6 +50,15 @@ DataStack(
     database_name=GLUE_DATABASE,
     env=env,
     description="Catalogo Glue + Athena sobre datos curados de POLITEIA",
+)
+
+# Stack 3: run plane — Lambdas de ingesta (empiezan con DINE).
+IngestStack(
+    app,
+    "PoliteiaIngest",
+    data_bucket_name=DATA_BUCKET,
+    env=env,
+    description="Lambdas de ingesta de POLITEIA (raw/)",
 )
 
 app.synth()
