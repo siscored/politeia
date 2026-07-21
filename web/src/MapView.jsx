@@ -39,25 +39,22 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
   const markersRef = useRef([]);
   const distritoRef = useRef(null);
   const selRef = useRef(null);
-  // refs con lo último de cada render (evita closures viejos en los callbacks)
   const dataRef = useRef(coloredGeo);
-  const ctxRef = useRef({ distrito, selected });
   dataRef.current = coloredGeo;
-  ctxRef.current = { distrito, selected };
 
   useEffect(() => {
     const map = new maplibregl.Map({
       container: boxRef.current, style: STYLE,
       center: [-58.9, -34.45], zoom: 10.5, attributionControl: false,
     });
+    mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
-    mapRef.current = map;
     map.on("error", (e) => console.error("MAPLIBRE", e && e.error && e.error.message));
-    // El 'load' de MapLibre queda trabado hasta un resize posterior a que carguen
-    // los tiles (más lento en prod). Reintentamos resize en intervalo ~2s.
-    let ticks = 0;
-    const resizeIv = setInterval(() => { try { map.resize(); } catch (_) {} if (++ticks >= 12) clearInterval(resizeIv); }, 180);
+
+    // El 'load' de MapLibre queda trabado (mapa negro) hasta un resize si el
+    // contenedor no tenía tamaño estable al crear. Forzamos resizes escalonados.
+    const resizeTimers = [0, 250, 700, 1500].map((t) => setTimeout(() => { try { map.resize(); } catch (_) {} }, t));
 
     map.on("load", () => {
       map.addSource("circuitos", { type: "geojson", data: dataRef.current, promoteId: "circuito_id" });
@@ -77,25 +74,25 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
       map.on("mouseenter", "fill", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", "fill", () => { map.getCanvas().style.cursor = ""; });
       readyRef.current = true;
-      sync();
+      renderData();
+      renderSelection();
     });
 
-    // Clave: el contenedor puede no tener tamaño al crear el mapa → resize.
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(boxRef.current);
-    return () => { clearInterval(resizeIv); ro.disconnect(); map.remove(); readyRef.current = false; };
+    requestAnimationFrame(() => map.resize());
+
+    return () => { resizeTimers.forEach(clearTimeout); ro.disconnect(); map.remove(); readyRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // re-sincronizar en cada render (usa dataRef/ctxRef = lo último)
-  useEffect(() => { if (readyRef.current) sync(); });
+  useEffect(() => { if (readyRef.current) renderData(); /* eslint-disable-next-line */ }, [coloredGeo]);
+  useEffect(() => { if (readyRef.current) renderSelection(); /* eslint-disable-next-line */ }, [selected]);
 
-  function sync() {
+  function renderData() {
     const map = mapRef.current;
     if (!map || !map.getSource("circuitos")) return;
     const data = dataRef.current;
-    const { distrito, selected } = ctxRef.current;
-
     map.getSource("circuitos").setData(data);
 
     markersRef.current.forEach((m) => m.remove());
@@ -109,10 +106,15 @@ export default function MapView({ coloredGeo, distrito, selected, onSelect }) {
     if (distrito !== distritoRef.current && data.features.length) {
       const b = new maplibregl.LngLatBounds();
       data.features.forEach((f) => eachCoord(f.geometry, (c) => b.extend(c)));
-      map.fitBounds(b, { padding: 50, duration: 500 });
+      map.fitBounds(b, { padding: 50, duration: 400 });
       distritoRef.current = distrito;
     }
+    map.triggerRepaint();
+  }
 
+  function renderSelection() {
+    const map = mapRef.current;
+    if (!map || !map.getSource("circuitos")) return;
     if (selRef.current) map.setFeatureState({ source: "circuitos", id: selRef.current }, { selected: false });
     if (selected) map.setFeatureState({ source: "circuitos", id: selected }, { selected: true });
     selRef.current = selected;
