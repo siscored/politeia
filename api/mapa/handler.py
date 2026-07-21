@@ -68,15 +68,23 @@ def lambda_handler(event, context):
     qs = event.get("queryStringParameters") or {}
     rows = _rows()
 
-    # Metadatos: dimensiones para armar los filtros del frontend.
+    # Metadatos: dimensiones + disponibilidad para armar los filtros del frontend.
     if qs.get("meta"):
         def uniq(col):
             return sorted({r[col] for r in rows if r.get(col)})
+        # disponibles[distrito][anio] = [cargos con eleccion GENERAL]
+        disp = {}
+        for r in rows:
+            if r.get("eleccion_tipo") != "GENERAL":
+                continue
+            disp.setdefault(r["municipio"], {}).setdefault(r["anio"], set()).add(r["cargo_nombre"])
+        disp = {d: {a: sorted(cs) for a, cs in ys.items()} for d, ys in disp.items()}
         return _resp(200, {
             "distritos": uniq("municipio"),
             "anios": sorted({r["anio"] for r in rows if r.get("anio")}, key=lambda x: int(x)),
             "cargos": uniq("cargo_nombre"),
             "tipos": uniq("eleccion_tipo"),
+            "disponibles": disp,
         })
 
     distrito = (qs.get("distrito") or "").lower()
