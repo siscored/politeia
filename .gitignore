@@ -1,5 +1,6 @@
-# datos crudos/curados (viven en S3, no en git)
-data/
+# datos crudos/curados (viven en S3, no en git) — solo la carpeta raíz,
+# NO web/src/data/ (que tiene los datos mock del frontend)
+/data/
 *.csv
 *.parquet
 !core/agrupaciones/diccionario.csv
