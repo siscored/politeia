@@ -1,4 +1,4 @@
-// Utilidades geográficas compartidas por los dos mapas (Google / MapLibre).
+// Utilidades geográficas para el mapa (Google Maps): centroides y encuadre.
 
 export function eachCoord(geom, fn) {
   const rings = geom.type === "Polygon" ? geom.coordinates

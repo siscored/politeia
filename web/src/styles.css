@@ -54,7 +54,6 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 .mapcard{position:relative;border-radius:var(--r-lg);overflow:hidden;height:640px;
   background:var(--map-panel);border:1px solid var(--map-line)}
 .map{position:absolute;inset:0}
-.maplibregl-canvas{outline:none}
 .filterbar{position:absolute;top:10px;left:10px;right:10px;z-index:5;background:var(--map-overlay);
   border:1px solid var(--map-line);border-radius:var(--r-md);padding:9px 11px;
   display:flex;flex-direction:column;gap:9px;backdrop-filter:blur(6px)}

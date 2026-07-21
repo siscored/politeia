@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import geo from "../circuitos.json";
-import MapView from "../MapView.jsx";
 import MapGoogle from "../MapGoogle.jsx";
 import { famOf, OTHER, title } from "../families.js";
 import { fetchMeta, fetchMapa } from "../api.js";
-
-const HAS_GMAPS = !!import.meta.env.VITE_GOOGLE_MAPS_KEY;
-const MapComp = HAS_GMAPS ? MapGoogle : MapView;
 
 const SUBTABS = ["Estructura de votos", "Composición del voto", "Issues por circuito", "Sentimiento por fuente", "Recomendador IA"];
 const CARGO_ORDER = ["PRESIDENTE", "GOBERNADOR", "INTENDENTE", "SENADORES_NAC", "DIPUTADOS_NAC", "SENADORES_PROV", "DIPUTADOS_PROV", "CONCEJALES", "MERCOSUR_NAC", "MERCOSUR_REG"];
@@ -121,8 +117,8 @@ export default function Inteligencia() {
                 <div className="seg" style={{ flexWrap: "wrap" }}>{cargos.map((c) => <button key={c} className={cargo === c ? "on" : ""} onClick={() => setCargo(c)}>{niceCargo(c)}</button>)}</div>
               </div>
             </div>
-            <MapComp coloredGeo={coloredGeo} distrito={distrito} selected={selected} onSelect={setSelected} />
-            <div className="map-credit">● {HAS_GMAPS ? "Google Maps · capa real" : "MapLibre · basemap oscuro"}</div>
+            <MapGoogle coloredGeo={coloredGeo} distrito={distrito} selected={selected} onSelect={setSelected} />
+            <div className="map-credit">● Google Maps · capa real</div>
           </div>
 
           <div className="panel">

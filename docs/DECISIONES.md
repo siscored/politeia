@@ -96,6 +96,16 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
   (inyecta el secret), `web/.env.example`.
 - **Ojo:** la key debe permitir el referer del dominio de producción (Amplify) + localhost.
 
+## 2026-07-21 · Baja del fallback MapLibre (Google Maps único)
+- **Contexto:** el CI siempre tiene la `VITE_GOOGLE_MAPS_KEY` (secret), así que en
+  producción el fallback MapLibre nunca se ejecutaba: era peso muerto. `maplibre-gl`
+  era además la dependencia que inflaba el bundle.
+- **Decisión:** eliminar el fallback. Se borró `web/src/MapView.jsx`, la dependencia
+  `maplibre-gl` y su import de CSS. El mapa usa **solo Google Maps**; sin key, no carga.
+- **Impacto:** bundle **1,23 MB → 0,43 MB** (~3×). Archivos: `web/src/modules/Inteligencia.jsx`,
+  `web/src/main.jsx`, `web/package.json`, `web/.env.example`, `web/src/styles.css`.
+- **Reversible:** el fallback quedó registrado en la decisión anterior si hubiera que reponerlo.
+
 ## 2026-07-21 · Fixes de correctitud del API del mapa
 - **CORS duplicado:** la Function URL **y** el handler seteaban ambos
   `Access-Control-Allow-Origin` → con `Origin` del browser se duplicaba y el fetch se
