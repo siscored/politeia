@@ -95,6 +95,13 @@ distrito** (misma sigla, distinta cosa). Ejemplos reales del dataset:
 peronismo (PJ / FpV / FdT / Fuerza Patria), Cambiemos/JxC, LLA como nuevo eje 2021+.
 Toda fusión/herencia se comenta en el diccionario y, si es criterio, en `DECISIONES.md`.
 
+**Estado (2026-07-21):** 13 familias validadas con el usuario. La columna **`familia`
+ya está materializada en `vista_mapa.csv`** vía `ingest/normaliza/enriquecer_vista_mapa.py`
+(resolver canónico `core/agrupaciones/familias.py`, espejo de `web/src/families.js`).
+Pendiente: completar `agrupacion_id` fino en el diccionario (hoy 63 de 236 crudas
+mapeadas explícitamente; el resto resuelve a familia por keyword) y que la API sirva
+`familia` para que el front deje de recalcularla.
+
 ## Particionado y consumo
 
 - **Hoy:** `consolidado.csv` (hechos) + `vista_mapa.csv` (mapa), en `procesados/`.

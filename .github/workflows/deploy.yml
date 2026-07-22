@@ -27,6 +27,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Validar dataset (core/validadores) — gate antes de desplegar
+        run: |
+          pip install -r core/requirements.txt
+          aws s3 cp s3://electoral-data-851679891137/electoral/procesados/vista_mapa/vista_mapa.csv /tmp/vista_mapa.csv
+          python core/validadores.py /tmp/vista_mapa.csv   # corta si hay errores duros
+
       - name: Desplegar infra (CDK)
         run: |
           cd infra

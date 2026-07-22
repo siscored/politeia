@@ -82,3 +82,88 @@ def correr_todos(df: pd.DataFrame, diccionario_ids: set[str] | None = None) -> l
     rep += sanidad_porcentajes(df)
     rep += linaje_agrupaciones(df, diccionario_ids or set())
     return rep
+
+
+# ---------------------------------------------------------------------------
+# Validación sobre vista_mapa.csv (capa de consumo). Distinta de consolidado:
+# columnas municipio,año,eleccion_tipo,cargo_nombre,circuito_id,agrupacion_nombre,
+# votos,porcentaje,gana,granularidad,circuito_padre[,familia].
+# Devuelve (duros, blandos): 'duros' debe cortar el CI; 'blandos' solo se reportan.
+# ---------------------------------------------------------------------------
+_NO_PARTIDO = {"BLANCO", "NULO", "RECURRIDO", "IMPUGNADO", "COMANDO"}
+_CLAVE_VM = ["año", "eleccion_tipo", "cargo_nombre", "municipio",
+             "circuito_id", "agrupacion_nombre"]
+
+
+def _unidad_vm(df: pd.DataFrame) -> pd.Series:
+    return (df["año"].astype(str) + "|" + df["eleccion_tipo"].astype(str) + "|"
+            + df["cargo_nombre"].astype(str) + "|" + df["municipio"].astype(str)
+            + "|" + df["circuito_id"].astype(str))
+
+
+def validar_vista_mapa(df: pd.DataFrame) -> tuple[list[str], list[str]]:
+    duros: list[str] = []
+    blandos: list[str] = []
+
+    # 1) Duplicados por clave (error duro)
+    claves = [c for c in _CLAVE_VM if c in df.columns]
+    d = df[df.duplicated(claves, keep=False)]
+    if not d.empty:
+        duros.append(f"duplicados: {len(d)} filas por {claves}")
+
+    # 2) % fuera de [0,100] (error duro)
+    pct = pd.to_numeric(df.get("porcentaje"), errors="coerce")
+    malos = df[(pct < 0) | (pct > 100)]
+    if not malos.empty:
+        duros.append(f"porcentaje fuera de [0,100]: {len(malos)} filas")
+
+    # 3) Suma de % por unidad ~100 (blando: puede haber redondeos)
+    tmp = df.assign(_u=_unidad_vm(df), _p=pct)
+    sumas = tmp.dropna(subset=["_p"]).groupby("_u")["_p"].sum()
+    fuera = sumas[(sumas < 95) | (sumas > 105)]
+    if len(fuera):
+        blandos.append(f"Σ% fuera de [95,105] en {len(fuera)}/{len(sumas)} unidades")
+
+    # 4) Flag 'gana': exactamente 1 por unidad y = máximo de votos
+    votos = pd.to_numeric(df.get("votos"), errors="coerce")
+    tmp = df.assign(_u=_unidad_vm(df), _v=votos, _g=df["gana"].astype(str) == "True")
+    sin = mult = 0
+    for _u, sub in tmp.groupby("_u"):
+        ng = int(sub["_g"].sum())
+        if ng == 0:
+            sin += 1
+        elif ng > 1:
+            mult += 1
+    if sin:
+        duros.append(f"unidades sin ganador: {sin}")
+    if mult:
+        blandos.append(f"unidades con >1 ganador (empates): {mult}")
+
+    # 5) Linaje de familia: cuántas caen en 'otras' (blando, informativo)
+    if "familia" in df.columns:
+        from core.agrupaciones.familias import FAMILIAS_VALIDAS
+        invalidas = set(df["familia"].dropna().astype(str)) - FAMILIAS_VALIDAS
+        if invalidas:
+            duros.append(f"familia con valores no válidos: {sorted(invalidas)[:10]}")
+        otras = df[df["familia"] == "otras"]["agrupacion_nombre"].nunique()
+        blandos.append(f"agrupaciones en 'otras' (sin familia clara): {otras}")
+
+    return duros, blandos
+
+
+if __name__ == "__main__":
+    # CLI para el CI:  python core/validadores.py <vista_mapa.csv>
+    import sys, os
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+    ruta = sys.argv[1] if len(sys.argv) > 1 else "vista_mapa.csv"
+    df = pd.read_csv(ruta, dtype=str, keep_default_na=False)
+    duros, blandos = validar_vista_mapa(df)
+    print(f"== Validación de {ruta} ({len(df)} filas) ==")
+    for b in blandos:
+        print(f"  [reporta] {b}")
+    if duros:
+        print("ERRORES DUROS:")
+        for x in duros:
+            print(f"  [FALLA] {x}")
+        sys.exit(1)
+    print("OK · sin errores duros.")

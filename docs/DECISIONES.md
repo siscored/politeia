@@ -106,6 +106,25 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
   `web/src/main.jsx`, `web/package.json`, `web/.env.example`, `web/src/styles.css`.
 - **Reversible:** el fallback quedó registrado en la decisión anterior si hubiera que reponerlo.
 
+## 2026-07-21 · `familia` en el dataset + validadores en CI
+- **Contexto:** la normalización de agrupaciones se resolvía solo en el front
+  (`families.js`, por keyword). El dataset curado no llevaba la familia (deuda de
+  docs/02 §normalización) y `core/validadores.py` no corría en el CI.
+- **Decisión:**
+  1. Resolver canónico en Python `core/agrupaciones/familias.py` (espejo de
+     `families.js`: mismo orden, patrones y colores). Única fuente en el plano de datos.
+  2. ETL reproducible `ingest/normaliza/enriquecer_vista_mapa.py` que agrega la columna
+     `familia` a `vista_mapa.csv` (idempotente; aporta al HUECO #5).
+  3. `vista_mapa.csv` en S3 re-subido **con** `familia` (versión anterior protegida por
+     versionado).
+  4. CI: `ci.yml` corre un smoke-test del resolver (sin datos); `deploy.yml` corre
+     `core/validadores.py` sobre el `vista_mapa` real de S3 como **gate** antes de desplegar
+     (corta si hay errores duros: duplicados, % fuera de rango, unidad sin ganador).
+- **Impacto:** `core/agrupaciones/familias.py`, `core/validadores.py`, `core/requirements.txt`,
+  `ingest/normaliza/`, `.github/workflows/{ci,deploy}.yml`, `vista_mapa.csv` (S3).
+- **Pendiente derivado:** que la API sirva `familia` y el front la consuma (hoy sigue
+  usando `famOf`), y habilitar el sub-tab "Composición del voto".
+
 ## 2026-07-21 · Fixes de correctitud del API del mapa
 - **CORS duplicado:** la Function URL **y** el handler seteaban ambos
   `Access-Control-Allow-Origin` → con `Origin` del browser se duplicaba y el fetch se

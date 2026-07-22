@@ -1,0 +1,2 @@
+# Dependencias para correr core/validadores.py (en CI y local).
+pandas>=2.0
