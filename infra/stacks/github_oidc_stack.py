@@ -70,6 +70,17 @@ class GithubOidcStack(Stack):
             )
         )
 
+        # 3c. Leer el dataset curado para validarlo en el CI (gate de datos).
+        deploy_role.add_to_policy(
+            iam.PolicyStatement(
+                sid="LeerDatasetCurado",
+                actions=["s3:GetObject"],
+                resources=[
+                    "arn:aws:s3:::electoral-data-851679891137/electoral/procesados/*"
+                ],
+            )
+        )
+
         # 3b. Desplegar el frontend a Amplify (manual deployment desde el CI).
         deploy_role.add_to_policy(
             iam.PolicyStatement(

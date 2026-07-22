@@ -27,17 +27,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validar dataset (core/validadores) — gate antes de desplegar
-        run: |
-          pip install -r core/requirements.txt
-          aws s3 cp s3://electoral-data-851679891137/electoral/procesados/vista_mapa/vista_mapa.csv /tmp/vista_mapa.csv
-          python core/validadores.py /tmp/vista_mapa.csv   # corta si hay errores duros
-
       - name: Desplegar infra (CDK)
         run: |
           cd infra
           pip install -r requirements.txt
           npx --yes aws-cdk@latest deploy --all --require-approval never
+
+      - name: Validar dataset (core/validadores) — gate de datos
+        # Corre DESPUÉS de la infra: el deploy aplica al rol OIDC el permiso de
+        # lectura del bucket (LeerDatasetCurado). Reintenta por propagación IAM.
+        run: |
+          pip install -r core/requirements.txt
+          for i in 1 2 3 4 5; do
+            aws s3 cp s3://electoral-data-851679891137/electoral/procesados/vista_mapa/vista_mapa.csv /tmp/vista_mapa.csv && break
+            echo "reintento $i (propagación IAM)..."; sleep 8
+          done
+          python core/validadores.py /tmp/vista_mapa.csv   # corta si hay errores duros
 
       - uses: actions/setup-node@v4
         with:
