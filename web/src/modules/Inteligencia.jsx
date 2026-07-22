@@ -10,6 +10,10 @@ const DIST = { pilar: "Pilar", san_fernando: "San Fernando" };
 const niceCargo = (c) => { const s = c.replace("_NAC", " Nac.").replace("_PROV", " Prov.").replace("_REG", " Reg.").replace("_", " "); return s.charAt(0) + s.slice(1).toLowerCase(); };
 const padre = (cid) => { const m = String(cid).match(/^(\d+)/); return m ? m[1].padStart(5, "0") : cid; };
 const fmt = (n) => n == null ? "—" : n.toLocaleString("es-AR");
+// El API deja `porcentaje: null` en blanco/nulo/impugnado/recurrido/comando: no
+// son voto positivo y no tienen % sobre válidos. Se excluyen de la composición y
+// de los totales (mismo criterio en circuito y en municipio).
+const esPositivo = (x) => x != null && Number.isFinite(x.porcentaje);
 
 export default function Inteligencia() {
   const [meta, setMeta] = useState(null);
@@ -36,15 +40,18 @@ export default function Inteligencia() {
 
   const model = useMemo(() => {
     const map = new Map();
-    (combo?.circuitos || []).forEach((c) => map.set(c.circuito_id, {
-      g: c.ganador?.agrupacion, gp: c.ganador?.porcentaje, comp: c.composicion || [], gran: c.granularidad,
-      validos: (c.composicion || []).reduce((a, x) => a + (x.votos || 0), 0),
-    }));
+    (combo?.circuitos || []).forEach((c) => {
+      const comp = (c.composicion || []).filter(esPositivo);
+      map.set(c.circuito_id, {
+        g: c.ganador?.agrupacion, gp: c.ganador?.porcentaje, comp, gran: c.granularidad,
+        validos: comp.reduce((a, x) => a + (x.votos || 0), 0),
+      });
+    });
     const lookup = (cid) => map.get(cid) || map.get(padre(cid)) || null;
     const uniform = features.length > 0 && features.every((f) => !lookup(f.properties.circuito_id));
     const uniVal = uniform ? [...map.values()][0] || null : null;
     const totals = {};
-    (combo?.circuitos || []).forEach((c) => c.composicion?.forEach((x) => { totals[x.agrupacion] = (totals[x.agrupacion] || 0) + (x.votos || 0); }));
+    (combo?.circuitos || []).forEach((c) => c.composicion?.filter(esPositivo).forEach((x) => { totals[x.agrupacion] = (totals[x.agrupacion] || 0) + (x.votos || 0); }));
     const tot = Object.values(totals).reduce((a, b) => a + b, 0);
     const muniComp = Object.entries(totals).map(([agrupacion, votos]) => ({ agrupacion, votos, porcentaje: tot ? votos / tot * 100 : 0 })).sort((a, b) => b.votos - a.votos);
     const muniWinner = muniComp[0] ? { g: muniComp[0].agrupacion, gp: muniComp[0].porcentaje } : uniVal;
@@ -135,18 +142,18 @@ export default function Inteligencia() {
               <div>
                 <div className="eyebrow" style={{ marginBottom: 9 }}>Composición del voto{selRec ? "" : " · municipio"}</div>
                 <div className="stacked">
-                  {compData.slice(0, 6).map((x, i) => <i key={i} style={{ width: `${x.porcentaje}%`, background: famOf(x.agrupacion).c }} title={title(x.agrupacion)} />)}
+                  {compData.slice(0, 6).map((x, i) => <i key={i} style={{ width: `${x.porcentaje || 0}%`, background: famOf(x.agrupacion).c }} title={title(x.agrupacion)} />)}
                 </div>
                 <div className="complist">
                   {compData.slice(0, 5).map((x, i) => (
-                    <div className="crow" key={i}><span className="swatch" style={{ background: famOf(x.agrupacion).c }} />{title(x.agrupacion)}<span className="pct">{x.porcentaje.toFixed(1)}%</span></div>
+                    <div className="crow" key={i}><span className="swatch" style={{ background: famOf(x.agrupacion).c }} />{title(x.agrupacion)}<span className="pct">{Number.isFinite(x.porcentaje) ? x.porcentaje.toFixed(1) + "%" : "—"}</span></div>
                   ))}
                 </div>
               </div>
             )}
             <div className="kv">
               <div><div className="k">Ganador</div><div className="val"><span className="swatch" style={{ background: famOf(winner?.g).c }} />{famOf(winner?.g).label.split(" / ")[0]}</div></div>
-              <div><div className="k">Margen (1°–2°)</div><div className="val">{margin != null ? margin.toFixed(1) + " pts" : "—"}</div></div>
+              <div><div className="k">Margen (1°–2°)</div><div className="val">{Number.isFinite(margin) ? margin.toFixed(1) + " pts" : "—"}</div></div>
             </div>
             <div>
               <div className="eyebrow" style={{ marginBottom: 9 }}>Leyenda · fuerza ganadora</div>
