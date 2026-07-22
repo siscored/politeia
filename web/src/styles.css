@@ -3,15 +3,22 @@ html,body,#root{height:100%}
 body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
   -webkit-font-smoothing:antialiased;line-height:1.45}
 
+/* ===== Superficies base (card/pad/track: los usan todos los módulos) ===== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-sm)}
+.pad{padding:16px 17px}
+.track{height:7px;background:var(--line);border-radius:5px;overflow:hidden}
+.track > i{display:block;height:100%;border-radius:5px}
+
 /* ===== Shell ===== */
-.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
-@media (max-width:900px){.app{grid-template-columns:1fr}}
+/* dvh (no vh): en mobile la barra del navegador cambia de alto y con vh el
+   layout salta al scrollear. */
+.app{display:grid;grid-template-columns:230px 1fr;min-height:100dvh}
 
 /* ===== Sidebar ===== */
 .sidebar{background:var(--sidebar);color:var(--sidebar-ink);display:flex;flex-direction:column;
-  padding:20px 14px;gap:20px;position:sticky;top:0;height:100vh;
+  padding:20px 14px;gap:20px;position:sticky;top:0;height:100dvh;
   border-right:1px solid rgba(148,163,184,.08)}
-@media (max-width:900px){.sidebar{position:static;height:auto;flex-direction:row;align-items:center;flex-wrap:wrap}}
 .sb-brand{display:flex;align-items:center;gap:11px;padding:0 6px}
 .sb-logo{width:36px;height:36px;border-radius:10px;background:var(--brand);color:var(--brand-ink);
   display:grid;place-items:center;font-weight:800;font-size:17px;box-shadow:0 4px 12px rgba(13,148,136,.35)}
@@ -25,6 +32,7 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
   text-align:left;width:100%;transition:background .12s,color .12s}
 .sb-ico{flex:none;color:var(--sidebar-muted);transition:color .12s}
 .sb-label{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-short{display:none}   /* etiqueta corta: sólo en la tab-bar mobile */
 .sb-star{color:var(--brand);margin-left:6px;font-size:11px}
 .sb-item .num{flex:none;font-size:10px;color:var(--sidebar-muted);font-family:var(--f-mono);letter-spacing:.02em}
 .sb-item:hover{background:rgba(148,163,184,.08);color:#eaf1fb}
@@ -55,7 +63,6 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 
 .module{padding:16px 22px 26px}
 .content{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:stretch}
-@media (max-width:1040px){.content{grid-template-columns:1fr}}
 
 /* ===== Mapa + barra de filtros (overlay) ===== */
 .mapcard{position:relative;border-radius:var(--r-lg);overflow:hidden;height:640px;
@@ -70,6 +77,7 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 .fbrow .spacer{flex:1}
 .seg{display:inline-flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--map-line);
   border-radius:var(--r-pill);padding:3px}
+.seg-cargos{flex-wrap:wrap}   /* la lista de cargos llega a 10 items */
 .seg button, .chip{border:0;background:transparent;color:var(--map-muted);font:inherit;font-size:12px;
   font-weight:600;padding:5px 12px;border-radius:var(--r-pill);cursor:pointer;white-space:nowrap}
 .seg button.on, .chip.on{background:var(--brand);color:var(--brand-ink)}
@@ -123,13 +131,11 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 
 /* ===== Resumen ===== */
 .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
-@media (max-width:1040px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
 .kpi .kpi-big{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums}
 .kpi .delta{font-size:13px;font-weight:700}
 .delta.up{color:var(--good)} .delta.down{color:var(--crit)}
 .kpi-note{font-size:11.5px;color:var(--muted);margin-top:8px}
 .two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px}
-@media (max-width:1040px){.two-col{grid-template-columns:1fr}}
 .sub{font-size:12px;color:var(--muted);margin:2px 0 12px}
 .card h3{margin:0;font-size:16px}
 
@@ -150,7 +156,6 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 .alerta-src{font-size:11.5px;color:var(--muted);margin-top:1px}
 
 .brecha-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
-@media (max-width:760px){.brecha-grid{grid-template-columns:1fr}}
 .brecha-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .brecha-bar{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px}
 .brecha-bar>span{width:66px;color:var(--muted);flex:none}
@@ -186,7 +191,6 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 
 /* ===== 04 Producción: flujo + embudo ===== */
 .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
-@media (max-width:760px){.flow{grid-template-columns:1fr 1fr}}
 .flow-step{border:1px solid var(--line);border-radius:var(--r-md);padding:12px}
 .flow-num{width:22px;height:22px;border-radius:50%;background:var(--brand);color:var(--brand-ink);
   font-weight:800;font-size:12px;display:grid;place-items:center;margin-bottom:8px}
@@ -212,3 +216,91 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 .reclamo{display:flex;align-items:center;gap:10px;justify-content:space-between}
 .reclamo-tit{font-size:13px;font-weight:600}
 .reclamo-src{font-size:11.5px;color:var(--muted);margin-top:1px}
+
+/* ===========================================================================
+   RESPONSIVE
+   Tres cortes, de mayor a menor:
+     1040px — el layout de 2 columnas (mapa + panel) no entra: pasa a 1 columna.
+      900px — shell mobile: el sidebar se vuelve tab-bar inferior y la barra de
+              filtros sale de encima del mapa (tapaba el mapa entero).
+      560px — teléfono angosto: todo a 1 columna, targets táctiles más grandes.
+   =========================================================================== */
+
+/* --- ≤1040px · tablet: el contenido deja de ser 2 columnas ---------------- */
+@media (max-width:1040px){
+  .content{grid-template-columns:1fr}
+  .two-col{grid-template-columns:1fr}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  /* El panel era sticky con max-height:100vh; apilado debajo del mapa eso lo
+     recortaba con scroll interno. En 1 columna fluye con la página. */
+  .panel{position:static;max-height:none;overflow:visible}
+}
+
+/* --- ≤900px · shell mobile ----------------------------------------------- */
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+
+  /* Sidebar → tab-bar inferior fija. Antes se volvía una fila con wrap, pero
+     .sb-item es width:100%: quedaban 6 filas apiladas (~450px) antes del
+     contenido. */
+  .sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:50;
+    height:auto;flex-direction:row;gap:0;padding:6px 4px;
+    padding-bottom:calc(6px + env(safe-area-inset-bottom));  /* notch iOS */
+    border-right:0;border-top:1px solid rgba(148,163,184,.14)}
+  .sb-brand,.sb-group,.sb-foot,.sb-item .num{display:none}
+  .sb-nav{flex-direction:row;flex:1;gap:0}
+  .sb-item{width:auto;flex:1;min-width:0;flex-direction:column;justify-content:center;
+    gap:3px;padding:7px 2px;min-height:52px;border-radius:8px}
+  .sb-label{display:none}
+  .sb-short{display:block;font-size:9px;font-weight:700;line-height:1;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .main{padding-bottom:66px}   /* que la tab-bar fija no tape el final */
+
+  .topbar{flex-wrap:wrap;gap:10px;padding:14px 16px}
+  .topbar .right{flex-wrap:wrap}
+  .module{padding:14px 16px 24px}
+
+  /* Subtabs: scroll horizontal en vez de wrap (no roba alto vertical). */
+  .subtabs{flex-wrap:nowrap;overflow-x:auto;padding:12px 16px 0;scrollbar-width:none}
+  .subtabs::-webkit-scrollbar{display:none}
+  .subtab{flex:none}
+
+  /* Mapa: la filterbar era un overlay absoluto sobre el mapa. Con ~12 años y
+     hasta 10 cargos tapaba el mapa completo. Pasa a bloque propio arriba, y
+     cada fila scrollea en horizontal. */
+  .mapcard{height:auto;display:flex;flex-direction:column}
+  .filterbar{position:static;border:0;border-radius:0;backdrop-filter:none;
+    background:var(--map-panel);border-bottom:1px solid var(--map-line);padding:10px}
+  .map{position:relative;inset:auto;flex:none;height:56dvh;min-height:300px}
+  .fbrow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .fbrow::-webkit-scrollbar{display:none}
+  .fbrow .spacer{display:none}
+  .seg,.seg-cargos{flex-wrap:nowrap}
+  .seg button,.chip{padding:9px 13px;font-size:12.5px}   /* target táctil */
+
+  .brecha-grid{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr 1fr}
+}
+
+/* --- ≤560px · teléfono angosto ------------------------------------------- */
+@media (max-width:560px){
+  .kpi-row{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr}
+  .topbar{padding:12px 13px}
+  .topbar h2{font-size:18px}
+  .module{padding:12px 13px 22px}
+  .subtabs{padding:11px 13px 0}
+  .pad{padding:14px}
+  .panel{padding:14px}
+  .p-title{font-size:17px}
+  .kpi .kpi-big{font-size:26px}
+  .map{height:48dvh}
+  .pulso-head{flex-wrap:wrap}
+
+  /* El label del embudo era width:150px fijo: dejaba ~100px de barra.
+     Pasa a ocupar su propia línea y la barra usa el ancho completo. */
+  .funnel-row{flex-wrap:wrap;gap:6px 10px}
+  .funnel-lbl{width:100%;order:1}
+  .funnel-track{order:2;flex:1}
+  .funnel-n{order:3;width:48px}
+}

@@ -135,7 +135,7 @@ export default function Inteligencia() {
                 <span className="lbl">Elección</span>
                 <div className="seg">{anios.map((y) => <button key={y} className={anio === y ? "on" : ""} onClick={() => setAnio(y)}>{y}</button>)}</div>
                 <span className="lbl" style={{ marginLeft: 8 }}>Cargo</span>
-                <div className="seg" style={{ flexWrap: "wrap" }}>{cargos.map((c) => <button key={c} className={cargo === c ? "on" : ""} onClick={() => setCargo(c)}>{niceCargo(c)}</button>)}</div>
+                <div className="seg seg-cargos">{cargos.map((c) => <button key={c} className={cargo === c ? "on" : ""} onClick={() => setCargo(c)}>{niceCargo(c)}</button>)}</div>
               </div>
             </div>
             <MapGoogle coloredGeo={coloredGeo} distrito={distrito} selected={selected} onSelect={setSelected} />
@@ -179,7 +179,7 @@ export default function Inteligencia() {
               </div>
             </div>
             {!selRec && winsSorted.length > 1 && (
-              <div className="note"><b>{DIST[distrito]}:</b> {model.muniWinner && famOf(model.muniWinner.g).label.split(" / ")[0]} ganó el municipio, pero <b>{winsSorted[0][0]}</b> lideró {winsSorted[0][1]} de {features.length} circuitos. Pasá el mouse por el mapa para ver cada circuito.</div>
+              <div className="note"><b>{DIST[distrito]}:</b> {model.muniWinner && famOf(model.muniWinner.g).label.split(" / ")[0]} ganó el municipio, pero <b>{winsSorted[0][0]}</b> lideró {winsSorted[0][1]} de {features.length} circuitos. Tocá un circuito del mapa para ver su detalle.</div>
             )}
             <div className="note" style={{ borderTop: "1px solid var(--line)", paddingTop: 10 }}>
               Cifras DINE (provisorio) + Junta PBA (definitivo). Polígonos: circuitos PBA (CNE / datos.gba.gob.ar), join por <code>circuito_id</code>. Colores por familia (§design system).

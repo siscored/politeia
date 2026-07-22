@@ -52,7 +52,11 @@ export default function MapGoogle({ coloredGeo, distrito, selected, onSelect }) 
       const g = window.google.maps;
       const map = new g.Map(boxRef.current, {
         center: { lat: -34.45, lng: -58.9 }, zoom: 11,
-        disableDefaultUI: true, zoomControl: true, gestureHandling: "greedy",
+        disableDefaultUI: true, zoomControl: true,
+        // En touch, "greedy" se traga el scroll de la página: arrastrar sobre el
+        // mapa paneaba en vez de scrollear y quedabas trabado en el mapa.
+        // "cooperative" = un dedo scrollea la página, dos dedos mueven el mapa.
+        gestureHandling: window.matchMedia("(pointer: coarse)").matches ? "cooperative" : "greedy",
         backgroundColor: "#0e1a2b", styles: DARK,
       });
       mapRef.current = map;

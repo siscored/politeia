@@ -23,13 +23,15 @@ const Icon = ({ n }) => (
 // Registro de módulos (estructura del mockup Comando IA). Cada uno es un
 // componente propio; Inteligencia tiene el mapa real (Pilar/San Fernando),
 // el resto replica el mockup con datos de ejemplo (Vicente López).
+// `short` es la etiqueta de la tab-bar mobile (6 tabs en ~360px no entran con
+// el nombre completo). Sólo una de las dos se muestra a la vez (ver styles.css).
 const MODULES = [
-  { num: "00", name: "Resumen", group: "op", icon: "activity", render: () => <Resumen /> },
-  { num: "01", name: "Defensa", group: "op", icon: "shield", render: () => <Defensa /> },
-  { num: "02", name: "Inteligencia", group: "op", icon: "map", star: true, render: () => <Inteligencia /> },
-  { num: "03", name: "Posicionamiento", group: "op", icon: "target", render: () => <Posicionamiento /> },
-  { num: "04", name: "Producción", group: "op", icon: "layers", render: () => <Produccion /> },
-  { num: "05", name: "Personalización", group: "addon", icon: "people", render: () => <Personalizacion /> },
+  { num: "00", name: "Resumen", short: "Resumen", group: "op", icon: "activity", render: () => <Resumen /> },
+  { num: "01", name: "Defensa", short: "Defensa", group: "op", icon: "shield", render: () => <Defensa /> },
+  { num: "02", name: "Inteligencia", short: "Intel", group: "op", icon: "map", star: true, render: () => <Inteligencia /> },
+  { num: "03", name: "Posicionamiento", short: "Posición", group: "op", icon: "target", render: () => <Posicionamiento /> },
+  { num: "04", name: "Producción", short: "Prod", group: "op", icon: "layers", render: () => <Produccion /> },
+  { num: "05", name: "Personalización", short: "Person", group: "addon", icon: "people", render: () => <Personalizacion /> },
 ];
 
 export default function App() {
@@ -38,9 +40,11 @@ export default function App() {
   const Item = ({ m }) => {
     const idx = MODULES.indexOf(m);
     return (
-      <button className={"sb-item" + (active === idx ? " active" : "")} onClick={() => setActive(idx)}>
+      <button className={"sb-item" + (active === idx ? " active" : "")}
+        onClick={() => setActive(idx)} aria-current={active === idx ? "page" : undefined}>
         <Icon n={m.icon} />
         <span className="sb-label">{m.name}{m.star && <span className="sb-star">★</span>}</span>
+        <span className="sb-short">{m.short}</span>
         <span className="num">{m.num}</span>
       </button>
     );
