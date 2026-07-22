@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import geo from "../circuitos.json";
 import MapGoogle from "../MapGoogle.jsx";
 import { famOf, OTHER, title } from "../families.js";
@@ -23,6 +23,7 @@ export default function Inteligencia() {
   const [combo, setCombo] = useState(null);
   const [selected, setSelected] = useState(null);
   const [colorMode, setColorMode] = useState("ganador");
+  const pedido = useRef(null); // última combinación pedida (guard de respuestas fuera de orden)
 
   useEffect(() => { fetchMeta().then(setMeta); }, []);
 
@@ -34,7 +35,19 @@ export default function Inteligencia() {
 
   useEffect(() => { if (anios.length && !anios.includes(anio)) setAnio(anios[anios.length - 1]); }, [anios]);
   useEffect(() => { if (cargos.length && !cargos.includes(cargo)) setCargo(cargos.includes("PRESIDENTE") ? "PRESIDENTE" : cargos[0]); }, [cargos]);
-  useEffect(() => { if (distrito && anio && cargo) { setSelected(null); fetchMapa(distrito, anio, cargo).then(setCombo); } }, [distrito, anio, cargo]);
+  // Al cambiar de año, `cargo` queda un render obsoleto hasta que el efecto de
+  // arriba lo reajusta: no pedir esa combinación intermedia (da 404, ej.
+  // 2007+DIPUTADOS_NAC) y descartar toda respuesta que ya no sea la vigente —
+  // sin el guard la request muerta resolvía última y pisaba la buena.
+  useEffect(() => {
+    if (!(distrito && anio && cargo) || !cargos.includes(cargo)) return;
+    const clave = `${distrito}|${anio}|${cargo}`;
+    pedido.current = clave;
+    setSelected(null);
+    fetchMapa(distrito, anio, cargo)
+      .then((r) => { if (pedido.current === clave) setCombo(r); })
+      .catch((e) => { if (pedido.current === clave) { console.error("fetchMapa", clave, e); setCombo({ circuitos: [] }); } });
+  }, [distrito, anio, cargo, cargos]);
 
   const features = useMemo(() => geo.features.filter((f) => f.properties.municipio === distrito), [distrito]);
 
@@ -80,6 +93,7 @@ export default function Inteligencia() {
   const compData = selRec ? selRec.comp : model.muniComp;
   const margin = compData?.length >= 2 ? (compData[0].porcentaje - compData[1].porcentaje) : null;
   const winner = selRec ? { g: selRec.g, gp: selRec.gp } : model.muniWinner;
+  const sinDatos = !combo?.circuitos?.length;
 
   return (
     <>
@@ -138,7 +152,10 @@ export default function Inteligencia() {
               </div>
             </div>
             <div className="divider" />
-            {winner && (
+            {sinDatos && (
+              <div className="note">Sin datos para <b>{niceCargo(cargo || "")} {anio}</b> en {DIST[distrito]}. Probá otro cargo o elección.</div>
+            )}
+            {!sinDatos && winner && (
               <div>
                 <div className="eyebrow" style={{ marginBottom: 9 }}>Composición del voto{selRec ? "" : " · municipio"}</div>
                 <div className="stacked">

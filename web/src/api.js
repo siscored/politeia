@@ -7,6 +7,9 @@ const BASE =
 async function get(params) {
   const qs = new URLSearchParams(params).toString();
   const r = await fetch(`${BASE}?${qs}`);
+  // Un 404 (combinación inexistente) trae un body JSON de error: parsearlo como
+  // si fuera un resultado deja el mapa vacío sin explicación. Mejor que falle.
+  if (!r.ok) throw new Error(`API ${r.status} · ${qs}`);
   return r.json();
 }
 
