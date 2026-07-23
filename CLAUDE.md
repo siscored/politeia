@@ -36,7 +36,7 @@ y **Defensa** (escucha en tiempo real + simulación de impacto). Mockup de refer
 | **Cobertura lograda** | **2003–2025**, ejecutivo + legislativo (DINE + Junta PBA) |
 | **HUECO #1 (crítico)** | **1983–2002 NO está.** El contrato pedía "desde 1983". Falta la franja que cubre **Andy Tow** (presidencial/gobernador/municipal 1983-2011). Ver `docs/05`. |
 | HUECO #2 | Sept-2025 solo a nivel **municipio** (no circuito) para lo no cubierto por DINE. |
-| HUECO #3 | Formato analítico: `consolidado.csv` es 1 CSV de ~150 MB; el contrato pide **Parquet particionado**. Ver `docs/03 §migración`. |
+| ~~HUECO #3~~ **RESUELTO** | `consolidado` migrado a **Parquet particionado** (`consolidado_parquet`, por `municipio/anio/categoria`, partition projection) el 2026-07-23: totales idénticos, ~42× más chico, ~3800× menos escaneo. CSV se conserva como espejo. Ver `analytics/parquet/` y `docs/07`→DECISIONES. `vista_mapa` sigue en CSV (path crítico del API). Follow-up: tabla en IaC + refresh desde el pipeline. |
 | ~~HUECO #4~~ **RESUELTO** | Versionado S3 **habilitado** (2026-07-20): el bucket ya protege el histórico. |
 | **HUECO #5 (parcial)** | **El dataset actual NO es del todo reproducible:** los scripts que lo generaron no existen en ningún repo. Se reconstruyen en `ingest/`. **Cerrado el tramo enriquecer→validar→publicar** de vista_mapa vía `politeia-pipeline-datos` (ver `docs/07`). Falta el paso consolidado→vista_mapa base y el ingest fino (DINE). |
 | Fuera de alcance | Resto del país, features de IA/escucha en vivo (se diseñan, no se implementan) |
@@ -82,8 +82,9 @@ politeia/
   empezando por `politeia-ingest-dine`.
 - **Almacenamiento:** S3 (`raw` + `procesados`/curated) con Athena para analítica;
   DynamoDB/Aurora para lecturas del API. `vista_mapa.csv` es el agregado de consumo.
-- **Formato canónico objetivo:** Parquet particionado por `distrito/anio/categoria`
-  (hoy es CSV — ver HUECO #3). Mantener CSV como espejo humano.
+- **Formato canónico:** `consolidado` ya está en **Parquet particionado** por
+  `municipio/anio/categoria` (`consolidado_parquet`, 2026-07-23 — HUECO #3 resuelto).
+  CSV se mantiene como espejo humano. `vista_mapa` sigue en CSV (path crítico del API).
 - **Secretos:** nunca en el repo. Credenciales AWS por profile (`idetec`, cuenta
   851679891137) / Secrets Manager. El CI/CD se autentica por **OIDC** (sin claves).
 - **Sin PII de votantes.** Solo agregados públicos por unidad (mesa/circuito/municipio).
@@ -142,7 +143,8 @@ Una tarea/PR NO está terminada hasta cumplir lo que aplique:
 ## 10. Roadmap corto
 
 1. **Hecho:** dataset 2003–2025 Pilar + San Fernando (DINE + Junta), curated + docs.
-2. **Siguiente (cierra el contrato original):** sumar **1983–2002 vía Andy Tow**;
-   migrar a **Parquet particionado**; **habilitar versionado** S3.
+2. **Hecho:** migrado a **Parquet particionado** (HUECO #3, 2026-07-23) y **versionado**
+   S3 habilitado (2026-07-20). **Falta para cerrar el contrato original:** sumar
+   **1983–2002 vía Andy Tow** (HUECO #1).
 3. Capa de consulta (API read-only) sobre `vista_mapa` / Parquet.
 4. Features de Inteligencia; luego Defensa.

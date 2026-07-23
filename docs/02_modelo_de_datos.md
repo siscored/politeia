@@ -107,6 +107,10 @@ mapeadas explícitamente; el resto resuelve a familia por keyword).
 ## Particionado y consumo
 
 - **Hoy:** `consolidado.csv` (hechos) + `vista_mapa.csv` (mapa), en `procesados/`.
-- **Objetivo:** Parquet particionado para Athena/Aurora; CSV como espejo humano.
+- **Parquet (HECHO 2026-07-23):** `consolidado` migrado a **Parquet particionado**
+  `consolidado_parquet` por `municipio/anio/categoria` (partition projection), en
+  `procesados/parquet/consolidado/`. CSV se mantiene como espejo humano. Totales
+  idénticos, ~42× más chico, ~3800× menos escaneo por query. Ver `analytics/parquet/`
+  y `docs/DECISIONES.md`. `vista_mapa` sigue en CSV (path crítico del API, no usa Athena).
 - **DynamoDB (si se usa para el API):** `PK = MUNI#<municipio>`,
   `SK = ELEC#<año>#<cargo>#<eleccion_tipo>#CIRC#<circuito_id>#AGR#<agrupacion_id>`.

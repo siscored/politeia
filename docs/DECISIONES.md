@@ -189,6 +189,43 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
   `web/src/modules/Inteligencia.jsx`, `web/src/MapGoogle.jsx`, `docs/02`. Cierra el
   "cabo suelto" del contrato `core/` ↔ front.
 
+## 2026-07-23 · Migración a Parquet particionado (HUECO #3)
+- **Contexto:** `consolidado.csv` es 1 archivo de ~150 MB; cada query de Athena lo
+  escanea entero. El contrato (CLAUDE.md §4, docs/03 §2) pide **Parquet particionado
+  por `distrito/anio/categoria`**, con CSV como espejo humano.
+- **Decisión:** Parquet SNAPPY en `procesados/parquet/consolidado/`, particionado por
+  `municipio / anio / categoria`, tabla Glue `consolidado_parquet` con **partition
+  projection**. Carga vía Athena `INSERT INTO … SELECT` desde la tabla CSV existente,
+  **en tandas** (límite de 100 particiones por query). SQL versionado en `analytics/parquet/`.
+- **Interpretaciones del contrato (las libertades que se tomaron, confirmadas con el usuario):**
+  1. **"distrito" = `municipio`.** Según la jerarquía del proyecto (docs/02): `País →
+     Distrito (PBA) → Sección → Municipio`. Literalmente "Distrito" = PBA = **un único
+     valor** → inútil como partición. La unidad analítica real es `municipio`
+     (pilar/san_fernando), que es lo que usan `vista_mapa` y el patrón DynamoDB
+     (`PK=MUNI#`). Existe además una columna `distrito_id` que significa otra cosa
+     (id de distrito electoral) y NO se usa como partición.
+  2. **"categoria" = `cargo_nombre`.** En jerga electoral, categoría = el cargo que se
+     elige (presidente, diputado, concejal…). `eleccion_tipo` (paso/general/balotaje)
+     queda como columna filtrable, NO como partición (el contrato lista 3 claves).
+  3. **Partition projection en vez de crawler.** El docstring de `data_stack.py`
+     anticipaba re-apuntar el crawler a los prefijos Parquet. Se prefiere projection:
+     la tabla deriva sus particiones de la query (sin correr/pagar crawler ni MSCK).
+- **Validación:** los totales deben cerrar CSV vs Parquet — `COUNT(*)` y
+  `SUM(votos_cantidad)` global y por partición (contrato §6/§7).
+- **Gestión de la tabla:** la crea el **DDL versionado** (`analytics/parquet/01_create…sql`
+  + runner `run.sh`), NO CloudFormation. Se prefirió no codificarla como `glue.CfnTable`
+  ahora (partition projection en CDK suma verbosidad/riesgo y un ciclo de deploy) — el DDL
+  versionado ya cumple la reproducibilidad del contrato (§6). **Follow-up documentado:**
+  codificar la tabla en `data_stack.py` como IaC. Es una desviación consciente de la
+  disciplina IaC-first del repo, registrada acá para que no sea un hueco silencioso.
+- **Resultado verificado (2026-07-23):** 1.200.301 filas y 27.095.945 votos idénticos
+  CSV↔Parquet, 0 particiones con diferencia, 96 particiones, 3.55 MB (vs 149.7 MB CSV),
+  ~41 KB escaneados por consulta típica (vs ~157 MB en CSV, ~3800×).
+- **Alcance honesto:** migra `consolidado`. NO toca `vista_mapa` (el API sigue leyendo
+  su CSV, chico y en el path crítico). NO cierra el linaje fino (deuda #3.3). El refresh
+  automático (enganchar al pipeline de Step Functions) queda como follow-up.
+- **Impacto:** `analytics/parquet/`, `docs/02`, `docs/03`, `CLAUDE.md §2` (HUECO #3).
+
 ## 2026-07-21 · Fixes de correctitud del API del mapa
 - **CORS duplicado:** la Function URL **y** el handler seteaban ambos
   `Access-Control-Allow-Origin` → con `Origin` del browser se duplicaba y el fetch se

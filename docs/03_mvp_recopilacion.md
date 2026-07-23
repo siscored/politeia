@@ -13,7 +13,7 @@ Fernando, ejecutivo + legislativo, **desde 1983**. Estado real en el bucket:
 | Rango temporal | **1983 → 2025** | **2003 → 2025** | ✖ falta 1983-2002 |
 | Granularidad | circuito | circuito (DINE) / municipio (Junta y 09-2025) | ~ |
 | Trazabilidad | fuente por fila | columna `fuente` (dine/junta) | ~ (falta linaje fino) |
-| Formato | Parquet particionado | CSV (consolidado 150 MB) | ✖ deuda #3 |
+| Formato | Parquet particionado | **Parquet particionado** (`consolidado_parquet`) + CSV espejo | ✔ (2026-07-23) |
 | Curado listo | sí | `consolidado.csv` + `vista_mapa.csv` | ✔ |
 | Documentado | sí | `docs/README_datos.md` + `resumen_exploratorio.md` | ✔ |
 
@@ -32,10 +32,15 @@ deuda menor.
 - **Riesgo:** verificar continuidad territorial y creación de municipios vecinos en
   los '90 antes de empalmar series largas.
 
-### 2. Migrar a Parquet particionado (deuda #3, mayor impacto en costo de consulta)
-- `consolidado.csv` (150 MB, 1 archivo) → Parquet particionado por
-  `distrito/anio/categoria`. Mantener el CSV como espejo humano.
-- Habilita Athena/Aurora eficiente; hoy cada query escanea el CSV entero.
+### 2. Migrar a Parquet particionado (deuda #3) — **HECHO (2026-07-23)**
+- `consolidado.csv` (150 MB) → **Parquet particionado** `consolidado_parquet` por
+  `municipio/anio/categoria` (partition projection). CSV se mantiene como espejo humano.
+- Resultado: 3.55 MB (vs 149.7 MB), totales idénticos (1.200.301 filas / 27.095.945
+  votos, 0 particiones con diferencia), ~41 KB escaneados por consulta típica del mapa
+  (vs ~157 MB en CSV). Reproducible en `analytics/parquet/` (SQL + runner + README).
+- Detalle: `docs/DECISIONES.md` (2026-07-23) — incluye por qué `municipio`≡"distrito"
+  y `cargo_nombre`≡"categoria". Follow-up: codificar la tabla en IaC; refresh automático
+  desde el pipeline.
 
 ### 3. Completar linaje fino
 - Agregar `fuente_url`, `fecha_extraccion`, `hash_registro` en el próximo ETL.
@@ -71,7 +76,7 @@ procesados/vista_mapa.csv    (agregado mapa)    → consumo frontend "Comando IA
 - [x] Curated consumible (`vista_mapa.csv` con `gana`, `granularidad`, `circuito_padre`).
 - [x] Limitaciones documentadas (provisorio↔definitivo, circuitos 2019, 09-2025).
 - [ ] **1983-2002** (Andy Tow).
-- [ ] Parquet particionado.
+- [x] Parquet particionado (`consolidado_parquet`, 2026-07-23; ver `analytics/parquet/`).
 - [~] Linaje fino: lo escribe `politeia-ingest-dine`; falta backfill del dataset viejo.
 - [x] Versionado S3 activado (2026-07-20).
 - [~] Reproducibilidad (HUECO #5): ingesta reconstruyéndose en `ingest/` (Lambda DINE).
