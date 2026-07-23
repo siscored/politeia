@@ -4,9 +4,13 @@
    raíz se propaga a todo el lienzo, de modo que al scrollear (u overscroll en
    mobile) nunca asoma el blanco por defecto del navegador antes de repintar. */
 html,body,#root{min-height:100%}
-html{background:var(--app-bg)}
+/* overscroll-behavior:none corta el "rebote" del scroll: al llegar al tope y
+   seguir tirando, el navegador ya no revela el lienzo de fondo. Necesario porque
+   el shell es claro pero el sidebar es oscuro: sin esto, el rebote arriba asoma
+   claro por encima del sidebar (se veía como un margen blanco a la izquierda). */
+html{background:var(--app-bg);overscroll-behavior:none}
 body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
-  -webkit-font-smoothing:antialiased;line-height:1.45}
+  -webkit-font-smoothing:antialiased;line-height:1.45;overscroll-behavior:none}
 
 /* ===== Superficies base (card/pad/track: los usan todos los módulos) ===== */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
@@ -80,9 +84,9 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 .fbrow .lbl{font-size:9.5px;letter-spacing:var(--ls-label);text-transform:uppercase;color:var(--map-muted);
   font-weight:700;margin-right:2px}
 .fbrow .spacer{flex:1}
-.seg{display:inline-flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--map-line);
-  border-radius:var(--r-pill);padding:3px}
-.seg-cargos{flex-wrap:wrap}   /* la lista de cargos llega a 10 items */
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--map-line);
+  border-radius:var(--r-pill);padding:3px}   /* wrap: los años (12) y cargos (hasta 10) no entran en 1 línea en el overlay; bajan en vez de recortarse */
+.seg-cargos{flex-wrap:wrap}
 .seg button, .chip{border:0;background:transparent;color:var(--map-muted);font:inherit;font-size:12px;
   font-weight:600;padding:5px 12px;border-radius:var(--r-pill);cursor:pointer;white-space:nowrap}
 .seg button.on, .chip.on{background:var(--brand);color:var(--brand-ink)}
