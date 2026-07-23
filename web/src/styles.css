@@ -1,5 +1,10 @@
 *{box-sizing:border-box}
-html,body,#root{height:100%}
+/* min-height (no height:100%): el body crece con el contenido, así su fondo no
+   se corta a 1 viewport. Y el fondo va TAMBIÉN en <html>: el fondo del elemento
+   raíz se propaga a todo el lienzo, de modo que al scrollear (u overscroll en
+   mobile) nunca asoma el blanco por defecto del navegador antes de repintar. */
+html,body,#root{min-height:100%}
+html{background:var(--app-bg)}
 body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
   -webkit-font-smoothing:antialiased;line-height:1.45}
 
