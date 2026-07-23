@@ -225,13 +225,14 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
 /* ===========================================================================
    RESPONSIVE
    Tres cortes, de mayor a menor:
-     1040px — el layout de 2 columnas (mapa + panel) no entra: pasa a 1 columna.
-      900px — shell mobile: el sidebar se vuelve tab-bar inferior y la barra de
-              filtros sale de encima del mapa (tapaba el mapa entero).
+     1040px — el layout de 2 columnas (mapa + panel) no entra: pasa a 1 columna
+              y la barra de filtros sale de encima del mapa. Cubre tablet en
+              horizontal (~1024px), no solo el shell mobile.
+      900px — shell mobile: el sidebar se vuelve tab-bar inferior.
       560px — teléfono angosto: todo a 1 columna, targets táctiles más grandes.
    =========================================================================== */
 
-/* --- ≤1040px · tablet: el contenido deja de ser 2 columnas ---------------- */
+/* --- ≤1040px · tablet: 1 columna + mapa/filtros apilados ------------------ */
 @media (max-width:1040px){
   .content{grid-template-columns:1fr}
   .two-col{grid-template-columns:1fr}
@@ -239,6 +240,20 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
   /* El panel era sticky con max-height:100vh; apilado debajo del mapa eso lo
      recortaba con scroll interno. En 1 columna fluye con la página. */
   .panel{position:static;max-height:none;overflow:visible}
+
+  /* Mapa: la filterbar era un overlay absoluto sobre el mapa. Con ~12 años y
+     hasta 10 cargos lo tapaba. Pasa a bloque propio arriba, y cada fila scrollea
+     en horizontal. Vivía en ≤900; subido a ≤1040 para que la tablet en
+     horizontal (~1024px) no quede con el overlay tapando el mapa. */
+  .mapcard{height:auto;display:flex;flex-direction:column}
+  .filterbar{position:static;border:0;border-radius:0;backdrop-filter:none;
+    background:var(--map-panel);border-bottom:1px solid var(--map-line);padding:10px}
+  .map{position:relative;inset:auto;flex:none;height:56dvh;min-height:300px}
+  .fbrow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .fbrow::-webkit-scrollbar{display:none}
+  .fbrow .spacer{display:none}
+  .seg,.seg-cargos{flex-wrap:nowrap}
+  .seg button,.chip{padding:9px 13px;font-size:12.5px}   /* target táctil */
 }
 
 /* --- ≤900px · shell mobile ----------------------------------------------- */
@@ -270,19 +285,8 @@ body{margin:0;background:var(--app-bg);color:var(--ink);font-family:var(--f-ui);
   .subtabs::-webkit-scrollbar{display:none}
   .subtab{flex:none}
 
-  /* Mapa: la filterbar era un overlay absoluto sobre el mapa. Con ~12 años y
-     hasta 10 cargos tapaba el mapa completo. Pasa a bloque propio arriba, y
-     cada fila scrollea en horizontal. */
-  .mapcard{height:auto;display:flex;flex-direction:column}
-  .filterbar{position:static;border:0;border-radius:0;backdrop-filter:none;
-    background:var(--map-panel);border-bottom:1px solid var(--map-line);padding:10px}
-  .map{position:relative;inset:auto;flex:none;height:56dvh;min-height:300px}
-  .fbrow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .fbrow::-webkit-scrollbar{display:none}
-  .fbrow .spacer{display:none}
-  .seg,.seg-cargos{flex-wrap:nowrap}
-  .seg button,.chip{padding:9px 13px;font-size:12.5px}   /* target táctil */
-
+  /* (El mapa/filterbar como bloque + scroll horizontal se resuelven en ≤1040,
+     así también aplica a tablet en horizontal; acá queda solo el shell mobile.) */
   .brecha-grid{grid-template-columns:1fr}
   .flow{grid-template-columns:1fr 1fr}
 }
