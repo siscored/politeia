@@ -1,5 +1,8 @@
-// Cliente del API del mapa (politeia-api-mapa, Function URL).
-// La URL se inyecta en build con VITE_API_URL; si no, usa el default conocido.
+// Cliente del API del mapa (politeia-api-mapa, API Gateway HTTP API).
+// La URL real se inyecta en build con VITE_API_URL (output ApiMapaUrl del stack
+// PoliteiaApi). El fallback de abajo es solo para dev local sin env; tras el
+// primer deploy con API Gateway, reemplazar por la URL execute-api.* o setear
+// VITE_API_URL en web/.env.
 const BASE =
   import.meta.env.VITE_API_URL ||
   "https://vlcwwo3krujfmwxe735xwppmmq0czzga.lambda-url.us-east-1.on.aws/";
