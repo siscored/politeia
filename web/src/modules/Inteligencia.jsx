@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import geo from "../circuitos.json";
 import MapGoogle from "../MapGoogle.jsx";
-import { famOf, OTHER, title } from "../families.js";
+import { famByKey, OTHER, title } from "../families.js";
 import { fetchMeta, fetchMapa } from "../api.js";
 
 const SUBTABS = ["Estructura de votos", "Composición del voto", "Issues por circuito", "Sentimiento por fuente", "Recomendador IA"];
@@ -56,27 +56,32 @@ export default function Inteligencia() {
     (combo?.circuitos || []).forEach((c) => {
       const comp = (c.composicion || []).filter(esPositivo);
       map.set(c.circuito_id, {
-        g: c.ganador?.agrupacion, gp: c.ganador?.porcentaje, comp, gran: c.granularidad,
+        g: c.ganador?.agrupacion, gfam: c.ganador?.familia, gp: c.ganador?.porcentaje, comp, gran: c.granularidad,
         validos: comp.reduce((a, x) => a + (x.votos || 0), 0),
       });
     });
     const lookup = (cid) => map.get(cid) || map.get(padre(cid)) || null;
     const uniform = features.length > 0 && features.every((f) => !lookup(f.properties.circuito_id));
     const uniVal = uniform ? [...map.values()][0] || null : null;
+    // La familia llega por la API (x.familia); se agrega junto a los votos para
+    // no reclasificar por nombre. Una agrupación mapea siempre a la misma familia.
     const totals = {};
-    (combo?.circuitos || []).forEach((c) => c.composicion?.filter(esPositivo).forEach((x) => { totals[x.agrupacion] = (totals[x.agrupacion] || 0) + (x.votos || 0); }));
-    const tot = Object.values(totals).reduce((a, b) => a + b, 0);
-    const muniComp = Object.entries(totals).map(([agrupacion, votos]) => ({ agrupacion, votos, porcentaje: tot ? votos / tot * 100 : 0 })).sort((a, b) => b.votos - a.votos);
-    const muniWinner = muniComp[0] ? { g: muniComp[0].agrupacion, gp: muniComp[0].porcentaje } : uniVal;
+    (combo?.circuitos || []).forEach((c) => c.composicion?.filter(esPositivo).forEach((x) => {
+      const t = totals[x.agrupacion] || (totals[x.agrupacion] = { votos: 0, familia: x.familia });
+      t.votos += (x.votos || 0);
+    }));
+    const tot = Object.values(totals).reduce((a, b) => a + b.votos, 0);
+    const muniComp = Object.entries(totals).map(([agrupacion, t]) => ({ agrupacion, familia: t.familia, votos: t.votos, porcentaje: tot ? t.votos / tot * 100 : 0 })).sort((a, b) => b.votos - a.votos);
+    const muniWinner = muniComp[0] ? { g: muniComp[0].agrupacion, gfam: muniComp[0].familia, gp: muniComp[0].porcentaje } : uniVal;
     const wins = {}, present = {};
-    features.forEach((f) => { const rec = lookup(f.properties.circuito_id) || uniVal; if (rec) { const fm = famOf(rec.g); wins[fm.key] = (wins[fm.key] || 0) + 1; present[fm.key] = { label: fm.label, c: fm.c, n: (present[fm.key]?.n || 0) + 1 }; } });
+    features.forEach((f) => { const rec = lookup(f.properties.circuito_id) || uniVal; if (rec) { const fm = famByKey(rec.gfam); wins[fm.key] = (wins[fm.key] || 0) + 1; present[fm.key] = { label: fm.label, c: fm.c, n: (present[fm.key]?.n || 0) + 1 }; } });
     return { map, lookup, uniform, uniVal, muniComp, muniWinner, muniValidos: tot, wins, present };
   }, [combo, features]);
 
   const coloredGeo = useMemo(() => {
     const feats = features.map((f) => {
       const rec = model.lookup(f.properties.circuito_id) || model.uniVal;
-      const fam = rec ? famOf(rec.g) : OTHER;
+      const fam = rec ? famByKey(rec.gfam) : OTHER;
       let fillOpacity = 0.62;
       if (colorMode === "margen" && rec?.comp?.length >= 1) {
         const m = (rec.comp[0].porcentaje || 0) - (rec.comp[1]?.porcentaje || 0);
@@ -92,7 +97,7 @@ export default function Inteligencia() {
   const legend = Object.entries(model.present).sort((a, b) => b[1].n - a[1].n);
   const compData = selRec ? selRec.comp : model.muniComp;
   const margin = compData?.length >= 2 ? (compData[0].porcentaje - compData[1].porcentaje) : null;
-  const winner = selRec ? { g: selRec.g, gp: selRec.gp } : model.muniWinner;
+  const winner = selRec ? { g: selRec.g, gfam: selRec.gfam, gp: selRec.gp } : model.muniWinner;
   const sinDatos = !combo?.circuitos?.length;
 
   return (
@@ -159,17 +164,17 @@ export default function Inteligencia() {
               <div>
                 <div className="eyebrow" style={{ marginBottom: 9 }}>Composición del voto{selRec ? "" : " · municipio"}</div>
                 <div className="stacked">
-                  {compData.slice(0, 6).map((x, i) => <i key={i} style={{ width: `${x.porcentaje || 0}%`, background: famOf(x.agrupacion).c }} title={title(x.agrupacion)} />)}
+                  {compData.slice(0, 6).map((x, i) => <i key={i} style={{ width: `${x.porcentaje || 0}%`, background: famByKey(x.familia).c }} title={title(x.agrupacion)} />)}
                 </div>
                 <div className="complist">
                   {compData.slice(0, 5).map((x, i) => (
-                    <div className="crow" key={i}><span className="swatch" style={{ background: famOf(x.agrupacion).c }} />{title(x.agrupacion)}<span className="pct">{Number.isFinite(x.porcentaje) ? x.porcentaje.toFixed(1) + "%" : "—"}</span></div>
+                    <div className="crow" key={i}><span className="swatch" style={{ background: famByKey(x.familia).c }} />{title(x.agrupacion)}<span className="pct">{Number.isFinite(x.porcentaje) ? x.porcentaje.toFixed(1) + "%" : "—"}</span></div>
                   ))}
                 </div>
               </div>
             )}
             <div className="kv">
-              <div><div className="k">Ganador</div><div className="val"><span className="swatch" style={{ background: famOf(winner?.g).c }} />{famOf(winner?.g).label.split(" / ")[0]}</div></div>
+              <div><div className="k">Ganador</div><div className="val"><span className="swatch" style={{ background: famByKey(winner?.gfam).c }} />{famByKey(winner?.gfam).label.split(" / ")[0]}</div></div>
               <div><div className="k">Margen (1°–2°)</div><div className="val">{Number.isFinite(margin) ? margin.toFixed(1) + " pts" : "—"}</div></div>
             </div>
             <div>
@@ -179,7 +184,7 @@ export default function Inteligencia() {
               </div>
             </div>
             {!selRec && winsSorted.length > 1 && (
-              <div className="note"><b>{DIST[distrito]}:</b> {model.muniWinner && famOf(model.muniWinner.g).label.split(" / ")[0]} ganó el municipio, pero <b>{winsSorted[0][0]}</b> lideró {winsSorted[0][1]} de {features.length} circuitos. Tocá un circuito del mapa para ver su detalle.</div>
+              <div className="note"><b>{DIST[distrito]}:</b> {model.muniWinner && famByKey(model.muniWinner.gfam).label.split(" / ")[0]} ganó el municipio, pero <b>{winsSorted[0][0]}</b> lideró {winsSorted[0][1]} de {features.length} circuitos. Tocá un circuito del mapa para ver su detalle.</div>
             )}
             <div className="note" style={{ borderTop: "1px solid var(--line)", paddingTop: 10 }}>
               Cifras DINE (provisorio) + Junta PBA (definitivo). Polígonos: circuitos PBA (CNE / datos.gba.gob.ar), join por <code>circuito_id</code>. Colores por familia (§design system).

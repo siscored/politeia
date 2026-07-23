@@ -161,6 +161,34 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
   `_source/` (bootstrap desde la live); trigger automático por llegada de datos requiere
   habilitar EventBridge en el bucket (hoy fuera de IaC).
 
+## 2026-07-23 · La API sirve `familia`; el front deja de reclasificar
+- **Contexto:** el criterio agrupación→familia estaba **duplicado**: los regex vivían
+  en `core/agrupaciones/familias.py` (backend) **y** en `web/src/families.js` (front),
+  copiados a mano. El front reclasificaba con `famOf(nombre)` en cada render, aunque la
+  columna `familia` ya se materializaba en el dataset. Dos fuentes de verdad que podían
+  divergir en silencio (el mapa pintaba un color y el dato validado decía otra cosa).
+- **Decisión:** separar **clasificación** (backend) de **presentación** (front).
+  - La API (`api/mapa/handler.py`) reenvía `familia` en cada item de la composición
+    (y por ende en `ganador`), leyéndola de la columna del CSV. Fallback `"otras"`.
+  - `web/src/families.js` pierde los 13 regex: queda solo la tabla `META`
+    (`familia → {label, color}`) + `famByKey(key)`. Se eliminó `famOf`.
+  - `web/src/modules/Inteligencia.jsx` consume `item.familia` (circuito y municipio,
+    ganador incluido) en vez de reclasificar por nombre. Import muerto de `famOf` en
+    `MapGoogle.jsx` removido.
+- **Alternativas descartadas:** que la API sirviera también color/label (el color es
+  decisión de diseño del front, no del backend — se dejó la presentación en el front);
+  mantener `famOf` como fallback en el front (perpetuaba la duplicación de regex).
+- **Validado:** `npm run build` OK (44 módulos); smoke-test del handler contra el CSV
+  live real → Pilar 2023 PRESIDENTE devuelve `UNION POR LA PATRIA→peronismo`,
+  `LA LIBERTAD AVANZA→lla`, `JUNTOS POR EL CAMBIO→jxc`.
+- **Orden de deploy:** la API (infra, por CI en push a main) debe quedar viva **antes**
+  de redeployar el front en Amplify; si el front saliera primero, `item.familia` vendría
+  `undefined` y el mapa se pintaría gris. El colores/labels de `META` deben seguir
+  coincidiendo con `core/agrupaciones/familias.py`.
+- **Impacto:** `api/mapa/handler.py`, `web/src/families.js`,
+  `web/src/modules/Inteligencia.jsx`, `web/src/MapGoogle.jsx`, `docs/02`. Cierra el
+  "cabo suelto" del contrato `core/` ↔ front.
+
 ## 2026-07-21 · Fixes de correctitud del API del mapa
 - **CORS duplicado:** la Function URL **y** el handler seteaban ambos
   `Access-Control-Allow-Origin` → con `Origin` del browser se duplicaba y el fetch se

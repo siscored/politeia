@@ -95,12 +95,14 @@ distrito** (misma sigla, distinta cosa). Ejemplos reales del dataset:
 peronismo (PJ / FpV / FdT / Fuerza Patria), Cambiemos/JxC, LLA como nuevo eje 2021+.
 Toda fusión/herencia se comenta en el diccionario y, si es criterio, en `DECISIONES.md`.
 
-**Estado (2026-07-21):** 13 familias validadas con el usuario. La columna **`familia`
-ya está materializada en `vista_mapa.csv`** vía `ingest/normaliza/enriquecer_vista_mapa.py`
-(resolver canónico `core/agrupaciones/familias.py`, espejo de `web/src/families.js`).
+**Estado (2026-07-23):** 13 familias validadas con el usuario. La columna **`familia`
+ya está materializada en `vista_mapa.csv`** vía `ingest/normaliza/` (resolver canónico
+`core/agrupaciones/familias.py`). **La API la reenvía en cada item y el front dejó de
+recalcularla** (`web/src/families.js` ya NO tiene los regex de clasificación: se quedó
+solo con la tabla presentación `familia → {label, color}`). Con esto el criterio de
+clasificación tiene **una única fuente de verdad** (backend); el front solo pinta.
 Pendiente: completar `agrupacion_id` fino en el diccionario (hoy 63 de 236 crudas
-mapeadas explícitamente; el resto resuelve a familia por keyword) y que la API sirva
-`familia` para que el front deje de recalcularla.
+mapeadas explícitamente; el resto resuelve a familia por keyword).
 
 ## Particionado y consumo
 

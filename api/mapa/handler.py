@@ -114,6 +114,10 @@ def lambda_handler(event, context):
         })
         item = {
             "agrupacion": r["agrupacion_nombre"],
+            # `familia` la resuelve el backend (core/agrupaciones/familias.py) y
+            # se materializa en el dataset; la API solo la reenvía para que el
+            # front NO tenga que reclasificar (única fuente de verdad del criterio).
+            "familia": r.get("familia") or "otras",
             "votos": int(_num(r["votos"]) or 0),
             "porcentaje": _num(r["porcentaje"]),
             "gana": str(r.get("gana", "")).lower() == "true",

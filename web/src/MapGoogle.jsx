@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { famOf } from "./families.js";
 import { eachCoord, centroid, coreFeatures } from "./geoutil.js";
 
 const KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY;
