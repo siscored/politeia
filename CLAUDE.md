@@ -38,7 +38,7 @@ y **Defensa** (escucha en tiempo real + simulación de impacto). Mockup de refer
 | HUECO #2 | Sept-2025 solo a nivel **municipio** (no circuito) para lo no cubierto por DINE. |
 | HUECO #3 | Formato analítico: `consolidado.csv` es 1 CSV de ~150 MB; el contrato pide **Parquet particionado**. Ver `docs/03 §migración`. |
 | ~~HUECO #4~~ **RESUELTO** | Versionado S3 **habilitado** (2026-07-20): el bucket ya protege el histórico. |
-| **HUECO #5 (nuevo, crítico)** | **El dataset actual NO es reproducible:** los scripts que lo generaron no existen en ningún repo. Se reconstruyen desde cero en `ingest/` (primera pieza: Lambda `politeia-ingest-dine`). |
+| **HUECO #5 (parcial)** | **El dataset actual NO es del todo reproducible:** los scripts que lo generaron no existen en ningún repo. Se reconstruyen en `ingest/`. **Cerrado el tramo enriquecer→validar→publicar** de vista_mapa vía `politeia-pipeline-datos` (ver `docs/07`). Falta el paso consolidado→vista_mapa base y el ingest fino (DINE). |
 | Fuera de alcance | Resto del país, features de IA/escucha en vivo (se diseñan, no se implementan) |
 
 **Regla dura:** un hueco documentado es aceptable; un hueco silencioso, no. Están

@@ -10,6 +10,7 @@ import aws_cdk as cdk
 from stacks.github_oidc_stack import GithubOidcStack
 from stacks.data_stack import DataStack
 from stacks.ingest_stack import IngestStack
+from stacks.pipeline_stack import PipelineStack
 from stacks.api_stack import ApiStack
 from stacks.web_stack import WebStack
 
@@ -33,6 +34,11 @@ github_subjects = [
 
 app = cdk.App()
 env = cdk.Environment(account=ACCOUNT, region=REGION)
+
+# Rótulo de control: todo recurso soportado queda etiquetado Project=politeia
+# (agrupa/identifica costos e inventario en la consola). Complementa el prefijo
+# de naming politeia-* que llevan los nombres de los recursos.
+cdk.Tags.of(app).add("Project", "politeia")
 
 # Stack 1: confianza OIDC GitHub Actions -> AWS + role de deploy.
 # Se despliega UNA vez a mano (admin), despues GitHub Actions se encarga.
@@ -61,6 +67,15 @@ IngestStack(
     data_bucket_name=DATA_BUCKET,
     env=env,
     description="Lambdas de ingesta de POLITEIA (raw/)",
+)
+
+# Stack 3b: pipeline de datos (normaliza→valida→publica) con gate en _staging.
+PipelineStack(
+    app,
+    "PoliteiaPipeline",
+    data_bucket_name=DATA_BUCKET,
+    env=env,
+    description="Pipeline reproducible de vista_mapa (Step Functions + Lambdas) de POLITEIA",
 )
 
 # Stack 4: API read-only del mapa (lo consume el frontend).
