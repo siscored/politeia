@@ -5,3 +5,5 @@ cdk.out/
 # entorno local
 .venv/
 __pycache__/
+# staging del layer core (se regenera en cada synth)
+.build/

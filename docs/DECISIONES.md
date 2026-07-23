@@ -125,6 +125,42 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
 - **Pendiente derivado:** que la API sirva `familia` y el front la consuma (hoy sigue
   usando `famOf`), y habilitar el sub-tab "Composición del voto".
 
+## 2026-07-23 · Pipeline de datos reproducible (politeia-pipeline-datos)
+- **Contexto:** el gate de validación vivía en `deploy.yml` y corría DESPUÉS de
+  publicar la key live (validaba tarde: un dato malo ya estaba en producción).
+  Además el enriquecido `familia` no tenía forma orquestada/reproducible en la nube
+  (parte de HUECO #5). Un push de código, encima, no debería republicar datos.
+- **Decisión:** Step Functions **Standard** `politeia-pipeline-datos` con el patrón
+  *validar en staging antes de publicar*:
+  `Normaliza → Valida → Choice(ok) → Publica(_staging→live) | Alerta(SNS)+Fail`.
+  - `politeia-normaliza-familias` (Lambda liviana, csv+core): lee `_source/`, agrega
+    la columna `familia` (mismo `familia_de` que el CLI y el front) y escribe `_staging/`.
+  - `politeia-valida-dataset` (Lambda, pandas del layer gestionado
+    `AWSSDKPandas-Python312:29`): corre `core/validadores.validar_vista_mapa` **tal cual**
+    sobre `_staging/`; `ok = sin errores duros`.
+  - Layer `politeia-core`: empaqueta `core/` (única fuente de verdad) para ambas Lambdas.
+    Se stagea a `python/core/` en cada `cdk synth` (helper en `pipeline_stack.py`, sin
+    Docker; destino en `infra/.build/`, gitignoreado).
+  - Solo si `ok` se copia `_staging/` → key live; si no, SNS `politeia-alertas` + Fail.
+  - Claves de trabajo `_source/` y `_staging/` son **hermanas** de `vista_mapa/`
+    (no adentro) para que el crawler de Glue no las levante como tablas.
+- **Se quitó** el step "Validar dataset" de `deploy.yml`: el gate ya no valida la live
+  post-deploy; la live solo cambia vía este pipeline, que valida antes.
+- **Alternativas descartadas:** validar en el CI post-deploy (valida tarde, y ata la
+  publicación de datos al push de código); reimplementar los validadores en csv puro en
+  la Lambda (divergiría de `core/validadores.py`, la fuente de verdad — se prefirió pagar
+  el layer de pandas y ejecutar el core sin cambios); tercera Lambda para publicar (se usó
+  la integración nativa S3 `copyObject` de Step Functions).
+- **Alcance honesto:** cubre enriquecer+validar+publicar. **NO** reconstruye el paso
+  consolidado→vista_mapa base (eso lo deja upstream en `_source/`). Cierra el tramo de
+  reproducibilidad de HUECO #5, no el HUECO completo.
+- **Impacto:** `infra/stacks/pipeline_stack.py` (+`app.py`), `ingest/normaliza/handler.py`,
+  `ingest/valida/handler.py`, `.github/workflows/deploy.yml`, `docs/07_pipeline_datos.md`,
+  `CLAUDE.md §2` (HUECO #5). Tag `Project=politeia` a nivel app (rótulo de control de costos).
+- **Pendiente derivado:** suscribir un email al topic `politeia-alertas`; sembrar
+  `_source/` (bootstrap desde la live); trigger automático por llegada de datos requiere
+  habilitar EventBridge en el bucket (hoy fuera de IaC).
+
 ## 2026-07-21 · Fixes de correctitud del API del mapa
 - **CORS duplicado:** la Function URL **y** el handler seteaban ambos
   `Access-Control-Allow-Origin` → con `Origin` del browser se duplicaba y el fetch se
