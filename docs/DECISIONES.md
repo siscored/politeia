@@ -189,6 +189,29 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
   `web/src/modules/Inteligencia.jsx`, `web/src/MapGoogle.jsx`, `docs/02`. Cierra el
   "cabo suelto" del contrato `core/` ↔ front.
 
+## 2026-07-24 · Participación electoral desde el bucket (deuda #6)
+- **Contexto:** el bucket ya tenía datos de valor sin explotar. El más claro: el padrón
+  (`mesa_electores`) y el tipo de voto (`votos_tipo`) del consolidado (nivel mesa DINE),
+  con los que se calcula **participación** y **desglose positivo/blanco/nulo** — deuda #6,
+  sin necesidad de fuentes nuevas.
+- **Decisión:** materializar el dataset curado `procesados/vista_participacion/vista_participacion.csv`
+  (una fila por municipio/anio/eleccion_tipo/cargo/circuito, con `mesas`, padrón, emitidos,
+  participación % y desglose). Se genera con Athena (`analytics/participacion/vista_participacion.sql`
+  + `build.sh`). **No CTAS** (el workgroup `politeia` impone la ubicación de salida y lo
+  bloquea): se corre un SELECT y se copia su resultado a la clave curada.
+- **Cobertura y límites (declarados, no silenciosos):**
+  - Solo **2011–2025** (el padrón viene de DINE por mesa; Junta 2003–2009 no lo trae).
+  - DINE es **provisorio**.
+  - **Outliers bajos** de participación a nivel circuito (PASO y circuitos chicos de SF
+    como `0882A`/`00881`, ~30–40%). Verificado que NO son mesas de extranjeros (NATIVOS);
+    causa única no fijada. Mitigación: columna `mesas` para juzgar robustez + recomendación
+    de leer participación a nivel municipio. NO publicar el dato de circuito sin este contexto.
+  - `mesa_tipo` con naming sucio en el origen (`NATIVOS`/`NATIVO`, `EXTRANJEROS`/`EXTRANJERO`,
+    vacíos) — anotado como deuda de limpieza del consolidado.
+- **Alcance:** entrega el **dato** (Fase 1). Consumirlo en el mapa (endpoint + capa
+  "participación") es Fase 2, no hecha.
+- **Impacto:** `analytics/participacion/`, `docs/02` (deuda #6 → hecha).
+
 ## 2026-07-23 · Migración a Parquet particionado (HUECO #3)
 - **Contexto:** `consolidado.csv` es 1 archivo de ~150 MB; cada query de Athena lo
   escanea entero. El contrato (CLAUDE.md §4, docs/03 §2) pide **Parquet particionado

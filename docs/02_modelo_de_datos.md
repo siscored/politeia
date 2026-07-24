@@ -81,8 +81,8 @@ El contrato canónico de POLITEIA pide, además de lo anterior:
 | `ambito` (nac/prov/mun) | implícito en cargo/fuente | agregar columna explícita |
 | `agrupacion_raw` (texto original preservado) | **no garantizado** | **verificar**: si `agrupacion_nombre` ya es el crudo, documentarlo; si se normalizó pisando el original, recuperarlo de `raw/` |
 | `fuente_url`, `fecha_extraccion`, `hash_registro` | solo `fuente` | agregar linaje fino en el próximo ETL |
-| `electores`/`padron` por unidad (para calcular **participación %**) | **no está** | **deuda #6**: `vista_mapa` trae `votos`, no el padrón. El mockup mostraba `padron` por circuito (dato de panel). Sumar la columna de electores desde DINE (nº de inscriptos por mesa→circuito) en el próximo ETL. Habilita participación y voto en blanco/nulo como % del padrón. |
-| Parquet particionado `distrito/anio/categoria` | es CSV | migrar (deuda #3) |
+| `electores`/`padron` por unidad (para calcular **participación %**) | **materializado** en `vista_participacion` | **deuda #6 — HECHO (2026-07-24)**: dataset curado `procesados/vista_participacion/vista_participacion.csv` con padrón, emitidos, participación % y desglose positivo/blanco/nulo/otros por circuito, derivado de `mesa_electores`+`votos_tipo` de DINE. Cobertura 2011–2025 (Junta 2003–2009 no trae padrón). Ver `analytics/participacion/`. Falta: consumirlo en el mapa (Fase 2). |
+| Parquet particionado `distrito/anio/categoria` | **Parquet** (`consolidado_parquet`) | HECHO (deuda #3, 2026-07-23) |
 
 > **Regla que se mantiene:** `agrupacion_raw` no se pisa. Si el ETL actual ya
 > normalizó sin conservar el original, es deuda a saldar leyendo de `raw/`.
