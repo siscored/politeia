@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import geo from "../circuitos.json";
 import MapGoogle from "../MapGoogle.jsx";
 import { famByKey, OTHER, title } from "../families.js";
+import { partColor, PART_STEPS, PART_SD } from "../participacion.js";
 import { fetchMeta, fetchMapa } from "../api.js";
 
 const SUBTABS = ["Estructura de votos", "Composición del voto", "Issues por circuito", "Sentimiento por fuente", "Recomendador IA"];
@@ -58,8 +59,25 @@ export default function Inteligencia() {
       map.set(c.circuito_id, {
         g: c.ganador?.agrupacion, gfam: c.ganador?.familia, gp: c.ganador?.porcentaje, comp, gran: c.granularidad,
         validos: comp.reduce((a, x) => a + (x.votos || 0), 0),
+        part: c.participacion || null,   // {participacion,padron,emitidos,mesas,pct_blanco,pct_nulo} | null
       });
     });
+    // Participación a nivel municipio: suma padrón/emitidos de los circuitos con
+    // dato (los blanco/nulo se promedian ponderados por emitidos). null si ningún
+    // circuito trae padrón (años de Junta 2003-2009).
+    let mpPad = 0, mpEmi = 0, mpB = 0, mpN = 0;
+    (combo?.circuitos || []).forEach((c) => {
+      const p = c.participacion;
+      if (p) { mpPad += p.padron || 0; mpEmi += p.emitidos || 0;
+        mpB += (p.emitidos || 0) * (p.pct_blanco || 0) / 100;
+        mpN += (p.emitidos || 0) * (p.pct_nulo || 0) / 100; }
+    });
+    const muniPart = mpPad ? {
+      padron: mpPad, emitidos: mpEmi,
+      participacion: Math.round(1000 * mpEmi / mpPad) / 10,
+      pct_blanco: mpEmi ? Math.round(1000 * mpB / mpEmi) / 10 : null,
+      pct_nulo: mpEmi ? Math.round(1000 * mpN / mpEmi) / 10 : null,
+    } : null;
     const lookup = (cid) => map.get(cid) || map.get(padre(cid)) || null;
     const uniform = features.length > 0 && features.every((f) => !lookup(f.properties.circuito_id));
     const uniVal = uniform ? [...map.values()][0] || null : null;
@@ -75,19 +93,27 @@ export default function Inteligencia() {
     const muniWinner = muniComp[0] ? { g: muniComp[0].agrupacion, gfam: muniComp[0].familia, gp: muniComp[0].porcentaje } : uniVal;
     const wins = {}, present = {};
     features.forEach((f) => { const rec = lookup(f.properties.circuito_id) || uniVal; if (rec) { const fm = famByKey(rec.gfam); wins[fm.key] = (wins[fm.key] || 0) + 1; present[fm.key] = { label: fm.label, c: fm.c, n: (present[fm.key]?.n || 0) + 1 }; } });
-    return { map, lookup, uniform, uniVal, muniComp, muniWinner, muniValidos: tot, wins, present };
+    return { map, lookup, uniform, uniVal, muniComp, muniWinner, muniValidos: tot, wins, present, muniPart };
   }, [combo, features]);
 
   const coloredGeo = useMemo(() => {
     const feats = features.map((f) => {
       const rec = model.lookup(f.properties.circuito_id) || model.uniVal;
-      const fam = rec ? famByKey(rec.gfam) : OTHER;
-      let fillOpacity = 0.62;
-      if (colorMode === "margen" && rec?.comp?.length >= 1) {
-        const m = (rec.comp[0].porcentaje || 0) - (rec.comp[1]?.porcentaje || 0);
-        fillOpacity = Math.max(0.25, Math.min(0.92, 0.25 + m / 55));
+      let fillColor, fillOpacity = 0.62;
+      if (colorMode === "participacion") {
+        // Escala secuencial por % de asistencia; gris + tenue donde no hay dato.
+        const pp = rec?.part?.participacion;
+        fillColor = partColor(pp);
+        fillOpacity = pp != null ? 0.72 : 0.3;
+      } else {
+        const fam = rec ? famByKey(rec.gfam) : OTHER;
+        fillColor = rec ? fam.c : "#334155";
+        if (colorMode === "margen" && rec?.comp?.length >= 1) {
+          const m = (rec.comp[0].porcentaje || 0) - (rec.comp[1]?.porcentaje || 0);
+          fillOpacity = Math.max(0.25, Math.min(0.92, 0.25 + m / 55));
+        }
       }
-      return { ...f, properties: { ...f.properties, fillColor: rec ? fam.c : "#334155", fillOpacity, weight: rec?.validos || 0 } };
+      return { ...f, properties: { ...f.properties, fillColor, fillOpacity, weight: rec?.validos || 0 } };
     });
     return { type: "FeatureCollection", features: feats };
   }, [features, model, colorMode]);
@@ -98,6 +124,7 @@ export default function Inteligencia() {
   const compData = selRec ? selRec.comp : model.muniComp;
   const margin = compData?.length >= 2 ? (compData[0].porcentaje - compData[1].porcentaje) : null;
   const winner = selRec ? { g: selRec.g, gfam: selRec.gfam, gp: selRec.gp } : model.muniWinner;
+  const partData = selRec ? selRec.part : model.muniPart;   // participación de la unidad mostrada (o null)
   const sinDatos = !combo?.circuitos?.length;
 
   return (
@@ -132,7 +159,7 @@ export default function Inteligencia() {
                 </div>
                 <div className="spacer" />
                 <button className={"chip" + (colorMode === "ganador" ? " on" : "")} onClick={() => setColorMode("ganador")}>Fuerza ganadora</button>
-                <button className="chip" disabled style={{ opacity: .5 }}>% de una fuerza</button>
+                <button className={"chip" + (colorMode === "participacion" ? " on" : "")} onClick={() => setColorMode("participacion")}>Participación</button>
                 <button className={"chip" + (colorMode === "margen" ? " on" : "")} onClick={() => setColorMode("margen")}>Margen</button>
                 <button className="chip" disabled style={{ opacity: .5 }}>Corte de boleta</button>
               </div>
@@ -160,6 +187,9 @@ export default function Inteligencia() {
             {sinDatos && (
               <div className="note">Sin datos para <b>{niceCargo(cargo || "")} {anio}</b> en {DIST[distrito]}. Probá otro cargo o elección.</div>
             )}
+            {!sinDatos && colorMode === "participacion" && !partData && (
+              <div className="note">Participación no disponible para <b>{anio}</b> (el padrón viene de DINE, 2011–2025).</div>
+            )}
             {!sinDatos && winner && (
               <div>
                 <div className="eyebrow" style={{ marginBottom: 9 }}>Composición del voto{selRec ? "" : " · municipio"}</div>
@@ -177,11 +207,34 @@ export default function Inteligencia() {
               <div><div className="k">Ganador</div><div className="val"><span className="swatch" style={{ background: famByKey(winner?.gfam).c }} />{famByKey(winner?.gfam).label.split(" / ")[0]}</div></div>
               <div><div className="k">Margen (1°–2°)</div><div className="val">{Number.isFinite(margin) ? margin.toFixed(1) + " pts" : "—"}</div></div>
             </div>
+            {partData && (
+              <>
+                <div className="kv" style={{ marginTop: 12 }}>
+                  <div><div className="k">Participación</div><div className="val">{partData.participacion != null ? partData.participacion.toFixed(1) + "%" : "—"}</div></div>
+                  <div><div className="k">Padrón</div><div className="val">{fmt(partData.padron)}</div></div>
+                </div>
+                {(partData.pct_blanco != null || partData.pct_nulo != null) && (
+                  <div className="note">Voto en blanco {partData.pct_blanco != null ? partData.pct_blanco.toFixed(1) : "—"}% · nulo {partData.pct_nulo != null ? partData.pct_nulo.toFixed(1) : "—"}% (sobre emitidos)</div>
+                )}
+              </>
+            )}
             <div>
-              <div className="eyebrow" style={{ marginBottom: 9 }}>Leyenda · fuerza ganadora</div>
-              <div className="legend">
-                {legend.map(([k, v]) => <div className="crow" key={k}><span className="swatch" style={{ background: v.c }} />{v.label}<span className="n">{v.n}</span></div>)}
-              </div>
+              {colorMode === "participacion" ? (
+                <>
+                  <div className="eyebrow" style={{ marginBottom: 9 }}>Leyenda · participación</div>
+                  <div className="legend">
+                    {PART_STEPS.map((s) => <div className="crow" key={s.label}><span className="swatch" style={{ background: s.c }} />{s.label}</div>)}
+                    <div className="crow"><span className="swatch" style={{ background: PART_SD }} />s/d</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="eyebrow" style={{ marginBottom: 9 }}>Leyenda · fuerza ganadora</div>
+                  <div className="legend">
+                    {legend.map(([k, v]) => <div className="crow" key={k}><span className="swatch" style={{ background: v.c }} />{v.label}<span className="n">{v.n}</span></div>)}
+                  </div>
+                </>
+              )}
             </div>
             {!selRec && winsSorted.length > 1 && (
               <div className="note"><b>{DIST[distrito]}:</b> {model.muniWinner && famByKey(model.muniWinner.gfam).label.split(" / ")[0]} ganó el municipio, pero <b>{winsSorted[0][0]}</b> lideró {winsSorted[0][1]} de {features.length} circuitos. Tocá un circuito del mapa para ver su detalle.</div>

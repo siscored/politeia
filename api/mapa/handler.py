@@ -21,6 +21,10 @@ import boto3
 s3 = boto3.client("s3")
 BUCKET = os.environ["DATA_BUCKET"]
 VM_KEY = os.environ.get("VISTA_MAPA_KEY", "electoral/procesados/vista_mapa/vista_mapa.csv")
+PART_KEY = os.environ.get(
+    "VISTA_PARTICIPACION_KEY",
+    "electoral/procesados/vista_participacion/vista_participacion.csv",
+)
 
 _CACHE = {}
 
@@ -47,6 +51,33 @@ def _rows():
             rows.append(r)
         _CACHE["rows"] = rows
     return _CACHE["rows"]
+
+
+def _participacion():
+    """Índice de participación por (municipio, anio, eleccion_tipo, cargo, circuito).
+
+    Dataset `vista_participacion` (deuda #6): padrón/emitidos/participación % +
+    desglose blanco/nulo. Cobertura 2011-2025 (DINE trae padrón). Si el dataset no
+    está, la API sigue funcionando sin participación (idx vacío).
+    """
+    if "part" not in _CACHE:
+        idx = {}
+        try:
+            body = s3.get_object(Bucket=BUCKET, Key=PART_KEY)["Body"].read().decode("utf-8-sig")
+            for r in csv.DictReader(io.StringIO(body)):
+                key = (r["municipio"], r["anio"], r["eleccion_tipo"], r["cargo"], r["circuito_id"])
+                idx[key] = {
+                    "participacion": _num(r.get("participacion")),
+                    "padron": int(_num(r.get("padron")) or 0),
+                    "emitidos": int(_num(r.get("emitidos")) or 0),
+                    "mesas": int(_num(r.get("mesas")) or 0),
+                    "pct_blanco": _num(r.get("pct_blanco")),
+                    "pct_nulo": _num(r.get("pct_nulo")),
+                }
+        except Exception:
+            idx = {}
+        _CACHE["part"] = idx
+    return _CACHE["part"]
 
 
 def _num(x):
@@ -128,6 +159,12 @@ def lambda_handler(event, context):
 
     for c in circuitos.values():
         c["composicion"].sort(key=lambda i: i["votos"], reverse=True)
+
+    # Adjunta participación por circuito (None donde no hay dato: 2003-2009 sin
+    # padrón, o municipio-level). El front decide cómo pintarla.
+    part = _participacion()
+    for c in circuitos.values():
+        c["participacion"] = part.get((distrito, anio, tipo, cargo, c["circuito_id"]))
 
     return _resp(200, {
         "filtro": {"distrito": distrito, "anio": anio, "cargo": cargo, "tipo": tipo},
