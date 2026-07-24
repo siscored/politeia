@@ -14,13 +14,40 @@ import pandas as pd
 
 TOLERANCIA_PROVISORIO = 0.07  # DINE queda hasta ~7% bajo el definitivo: esperado
 
-# Años con eleccion por cargo (para detectar huecos). Completar/verificar con fuentes.
+# ---------------------------------------------------------------------------
+# Calendario electoral 1983-2025 para Pilar y San Fernando (ambos 1ª Sección
+# Electoral PBA). Claves = cargo_nombre canónico del dataset (mayúsculas).
+# Un año ausente acá = NO hubo esa elección (su falta en los datos no es hueco).
+#
+# Reglas que lo generan (validado contra el meta del API en vivo, 2026-07-24):
+# - Legislatura PBA renueva por mitades; a la 1ª Sección le tocan SENADORES_PROV
+#   en 1985+4k (…2017, 2021, 2025) y DIPUTADOS_PROV en 1987+4k (…2019, 2023).
+#   1983 eligió la legislatura completa (ambas cámaras).
+# - SENADORES_NAC: voto popular recién desde 2001 (Senado completo); luego la
+#   clase PBA: 2005, 2011, 2017, 2023. Pre-2001 era elección indirecta → no es
+#   hueco de datos.
+# - CONCEJALES: renovación por mitades cada 2 años → todos los años impares.
+# - MERCOSUR: única elección directa de Parlasur fue 2015 (después se suspendió).
+#   Ojo: el dataset dice tener 2023 — anomalía a verificar, ver check "inesperado".
 ANIOS_ELECCION = {
-    "presidente":        [1983,1989,1995,1999,2003,2007,2011,2015,2019,2023],
-    "gobernador":        [1983,1987,1991,1995,1999,2003,2007,2011,2015,2019,2023],
-    "intendente":        [1983,1987,1991,1995,1999,2003,2007,2011,2015,2019,2023],
-    "diputado_nacional": list(range(1983, 2026, 2)),
+    "PRESIDENTE":     [1983, 1989, 1995, 1999, 2003, 2007, 2011, 2015, 2019, 2023],
+    "GOBERNADOR":     [1983, 1987, 1991, 1995, 1999, 2003, 2007, 2011, 2015, 2019, 2023],
+    "INTENDENTE":     [1983, 1987, 1991, 1995, 1999, 2003, 2007, 2011, 2015, 2019, 2023],
+    "DIPUTADOS_NAC":  list(range(1983, 2026, 2)),
+    "SENADORES_NAC":  [2001, 2005, 2011, 2017, 2023],
+    "DIPUTADOS_PROV": [1983, 1987, 1991, 1995, 1999, 2003, 2007, 2011, 2015, 2019, 2023],
+    "SENADORES_PROV": [1983, 1985, 1989, 1993, 1997, 2001, 2005, 2009, 2013, 2017, 2021, 2025],
+    "CONCEJALES":     list(range(1983, 2026, 2)),
+    "MERCOSUR_NAC":   [2015],
+    "MERCOSUR_REG":   [2015],
 }
+
+# Dimensión eleccion_tipo (GENERAL es lo que cubre ANIOS_ELECCION):
+# - PASO nacionales: 2011-2023; suspendidas en 2025. Sept-2025 (provincial) fue sin PASO.
+# - Segunda vuelta presidencial realizada: 2015 y 2023 (la de 2003 se convocó y
+#   se canceló: su ausencia no es hueco).
+ANIOS_PASO = [2011, 2013, 2015, 2017, 2019, 2021, 2023]
+ANIOS_SEGUNDA_VUELTA = {"PRESIDENTE": [2015, 2023]}
 
 
 def _unidad(df: pd.DataFrame) -> pd.Series:
@@ -42,12 +69,40 @@ def cierre_de_totales(df: pd.DataFrame) -> list[str]:
 
 
 def continuidad_temporal(df: pd.DataFrame) -> list[str]:
+    """Cruza el dataset contra ANIOS_ELECCION por (municipio, cargo, año).
+
+    Devuelve dos clases de hallazgos:
+      - "hueco: ..."      → hubo elección según el calendario y no hay datos.
+      - "inesperado: ..." → hay datos en un año sin elección según el calendario
+                            (p.ej. MERCOSUR 2023): o el calendario está mal o el
+                            dato está mal etiquetado. Ambos ameritan revisión.
+
+    Acepta consolidado y vista_mapa reales: la columna de año puede llamarse
+    "anio" o "año", y cargo_nombre se compara en mayúsculas (valores canónicos
+    del ETL: PRESIDENTE, DIPUTADOS_NAC, ...).
+    """
+    anio_col = "anio" if "anio" in df.columns else "año"
+    if anio_col not in df.columns or "cargo_nombre" not in df.columns:
+        return ["continuidad_temporal: faltan columnas cargo_nombre/año"]
+
+    cargos = df["cargo_nombre"].astype(str).str.strip().str.upper()
+    anios = pd.to_numeric(df[anio_col], errors="coerce")
+    munis = (df["municipio"].astype(str).str.strip().str.lower()
+             if "municipio" in df.columns
+             else pd.Series(["(todos)"] * len(df), index=df.index))
+
+    presentes = {(m, c, int(a)) for m, c, a in zip(munis, cargos, anios)
+                 if pd.notna(a)}
+
     out = []
-    presentes = set(zip(df["cargo_nombre"], df["anio"]))
-    for cargo, anios in ANIOS_ELECCION.items():
-        for a in anios:
-            if (cargo, a) not in presentes:
-                out.append(f"hueco: falta {cargo} {a}")
+    for muni in sorted({m for m, _, _ in presentes}):
+        for cargo, esperados in ANIOS_ELECCION.items():
+            for a in esperados:
+                if (muni, cargo, a) not in presentes:
+                    out.append(f"hueco: falta {cargo} {a} en {muni}")
+    for muni, cargo, a in sorted(presentes):
+        if cargo in ANIOS_ELECCION and a not in ANIOS_ELECCION[cargo]:
+            out.append(f"inesperado: {cargo} {a} en {muni} sin elección en calendario")
     return out
 
 
