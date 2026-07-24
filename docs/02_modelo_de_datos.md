@@ -107,6 +107,11 @@ mapeadas explícitamente; el resto resuelve a familia por keyword).
 ## Particionado y consumo
 
 - **Hoy:** `consolidado.csv` (hechos) + `vista_mapa.csv` (mapa), en `procesados/`.
+- **Datasets curados derivados (extraídos del bucket, sin fuentes nuevas):**
+  - `vista_participacion/` — participación % + desglose blanco/nulo por circuito (deuda #6,
+    2011-2025). Lo consume el mapa (modo "Participación"). Ver `analytics/participacion/`.
+  - `vista_internas/` — internas de las PASO (lista más votada de cada partido).
+    Ver `analytics/internas/`. Aún no consumido por el front.
 - **Parquet (HECHO 2026-07-23):** `consolidado` migrado a **Parquet particionado**
   `consolidado_parquet` por `municipio/anio/categoria` (partition projection), en
   `procesados/parquet/consolidado/`. CSV se mantiene como espejo humano. Totales

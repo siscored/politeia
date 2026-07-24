@@ -189,6 +189,26 @@ Registrar acá toda decisión de diseño/criterio que no esté ya en los docs. F
   `web/src/modules/Inteligencia.jsx`, `web/src/MapGoogle.jsx`, `docs/02`. Cierra el
   "cabo suelto" del contrato `core/` ↔ front.
 
+## 2026-07-24 · Internas de las PASO desde el bucket (dimensión latente)
+- **Contexto:** el consolidado tenía `lista_numero`/`lista_nombre` (listas internas de
+  PASO) sin explotar: 95% de las filas PASO las traen, 243 listas distintas. El mapa
+  suma las listas de un partido y las esconde.
+- **Decisión:** materializar `procesados/vista_internas/vista_internas.csv` (1147 filas):
+  una fila por municipio/anio/cargo/agrupacion/lista con votos, `votos_partido`,
+  `pct_en_partido`, `gana_interna` (lista más votada del partido) y `listas_en_partido`.
+  Generado con Athena (`analytics/internas/`), mismo patrón que participación (SELECT +
+  copia, no CTAS).
+- **Ejemplo real validado:** Pilar 2021 interna de CONCEJALES de JUNTOS — lista B 38.52%
+  gana a A 37.55% y DAR EL PASO 23.92%.
+- **Límites:** solo PASO con voto positivo y lista nombrada (~2011-2025); partidos con
+  lista única salen con `listas_en_partido=1`. Hereda caveats de DINE provisorio.
+- **Hallazgo colateral (documentado, NO materializado):** `mesa_tipo` distingue
+  **nativos vs extranjeros**, con participación muy distinta — Pilar 2023 DIPUTADOS_PROV:
+  nativos 77.9% vs **extranjeros 47.7%** (padrón 29.561). Los extranjeros no votan
+  cargos nacionales (presidente/diputado nac.). Dimensión materializable a futuro (explica
+  parte de los outliers bajos de participación). `mesa_tipo` tiene naming sucio a limpiar.
+- **Impacto:** `analytics/internas/`, `docs/02`.
+
 ## 2026-07-24 · Participación electoral desde el bucket (deuda #6)
 - **Contexto:** el bucket ya tenía datos de valor sin explotar. El más claro: el padrón
   (`mesa_electores`) y el tipo de voto (`votos_tipo`) del consolidado (nivel mesa DINE),
